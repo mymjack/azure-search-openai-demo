@@ -14,6 +14,7 @@ from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 from azure.storage.blob import BlobServiceClient
 
 from vdbutils.indexer import Indexer
+from vdbutils.retriever import Retriever
 
 # Replace these with your own values, either in environment variables or directly here
 AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT") or "mystorageaccount"
@@ -46,14 +47,16 @@ openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.
 openai.api_key = openai_token.token
 
 # Set up clients for Cognitive Search and Storage
+index_client = SearchIndexClient(
+    endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
+    credential=azure_credential)
+indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
+
 search_client = SearchClient(
     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
     index_name=AZURE_SEARCH_INDEX,
     credential=azure_credential)
-
-index_client = SearchIndexClient(
-    endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
-    credential=azure_credential)
+retriever = Retriever(search_client, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
 
 blob_client = BlobServiceClient(
     account_url=f"https://{AZURE_STORAGE_ACCOUNT}.blob.core.windows.net", 
@@ -73,7 +76,6 @@ chat_approaches = {
 }
 
 # crawler = Crawler(...)
-indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
 
 app = Flask(__name__)
 

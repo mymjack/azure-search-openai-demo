@@ -8,6 +8,9 @@ import glob
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
 
+from vdbutils.indexer import Indexer
+from vdbutils.retriever import Retriever, SearchModes
+
 
 AZURE_SEARCH_SERVICE = "gptkb-nnljxrgpw3pfk"
 AZURE_SEARCH_INDEX = "gptkbindex"
@@ -16,8 +19,6 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT = "ada"
 
 os.environ['AZURE_SEARCH_SERVICE'] = AZURE_SEARCH_SERVICE
 os.environ['VERBOSE'] = "true"
-
-from app.backend.vdbutils.indexer import Indexer
 
 # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and Blob Storage (no secrets needed, 
 # just use 'az login' locally, and managed identity when deployed on Azure). If you need to use keys, use separate AzureKeyCredential instances with the 
@@ -35,17 +36,10 @@ openai.api_type = "azure_ad"
 openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
 openai.api_key = openai_token.token
 
-# Set up clients for Cognitive Search and Storage
-search_client = SearchClient(
-    endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
-    index_name=AZURE_SEARCH_INDEX,
-    credential=azure_credential)
-
+# Index all bmo files
 index_client = SearchIndexClient(
     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
     credential=azure_credential)
-
-# crawler = Crawler(...)
 indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
 indexer.purge_index()
 
@@ -71,3 +65,25 @@ for file in glob.glob('../../../data/BMOcomCloned/**/*.txt', recursive=True):
         'category': category
     }
     indexer.index(document)
+
+# Test retrieve
+search_client = SearchClient(
+    endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
+    index_name=AZURE_SEARCH_INDEX,
+    credential=azure_credential)
+retriever = Retriever(search_client, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
+
+# results = retriever.retrieve("What insurances does bmo offer?", SearchModes.Basic)
+# [print(r) for r in results]
+
+results = retriever.retrieve("What insurances does bmo offer?", SearchModes.Vector)
+[print(r) for r in results]
+
+# results = retriever.retrieve("What insurances does bmo offer?", SearchModes.Semantic)
+# [print(r) for r in results]
+
+# results = retriever.retrieve("What insurances does bmo offer?", SearchModes.Hybrid)
+# [print(r) for r in results]
+
+# results = retriever.retrieve("What insurances does bmo offer?", SearchModes.SemanticHybrid)
+# [print(r) for r in results]
