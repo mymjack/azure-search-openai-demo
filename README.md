@@ -1,8 +1,5 @@
 # ChatGPT + Enterprise data with Azure OpenAI and Cognitive Search
 
-[![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=brightgreen&logo=github)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=599293758&machine=standardLinux32gb&devcontainer_path=.devcontainer%2Fdevcontainer.json&location=WestUs2)
-[![Open in Remote - Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Remote%20-%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
-
 This sample demonstrates a few approaches for creating ChatGPT-like experiences over your own data using the Retrieval Augmented Generation pattern. It uses Azure OpenAI Service to access the ChatGPT model (gpt-35-turbo), and Azure Cognitive Search for data indexing and retrieval.
 
 The repo includes sample data so it's ready to try end to end. In this sample application we use a fictitious company called Contoso Electronics, and the experience allows its employees to ask questions about the benefits, internal policies, as well as job descriptions and roles.
@@ -37,13 +34,6 @@ The repo includes sample data so it's ready to try end to end. In this sample ap
    - **Important**: Ensure you can run `pwsh.exe` from a PowerShell command. If this fails, you likely need to upgrade PowerShell.
 
 >NOTE: Your Azure Account must have `Microsoft.Authorization/roleAssignments/write` permissions, such as [User Access Administrator](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#user-access-administrator) or [Owner](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#owner).  
-
-#### To Run in GitHub Codespaces or VS Code Remote Containers
-
-You can run this repo virtually by using GitHub Codespaces or VS Code Remote Containers.  Click on one of the buttons below to open this repo in one of those options.
-
-[![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=brightgreen&logo=github)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=599293758&machine=standardLinux32gb&devcontainer_path=.devcontainer%2Fdevcontainer.json&location=WestUs2)
-[![Open in Remote - Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Remote%20-%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
 
 ### Installation
 
@@ -124,3 +114,40 @@ Once in the web app:
 If you see this error while running `azd deploy`: `read /tmp/azd1992237260/backend_env/lib64: is a directory`, then delete the `./app/backend/backend_env folder` and re-run the `azd deploy` command.  This issue is being tracked here: https://github.com/Azure/azure-dev/issues/1237
 
 If the web app fails to deploy and you receive a '404 Not Found' message in your browser, run 'azd deploy'. 
+
+
+### Folder Structure
+```
+/azure-search-openai-demo
+| azure.yaml  (Main pipeline definition)
+| /app  (Actual application code)
+| | /backend  (Flask server)
+| | | /vdbutils  (New folder added to support vector indexing of BMO docs)
+| | | /backend_env  (Python3.9 venv)
+| | /frontend  (node.js client)
+| | start.ps1/start.sh  (application local startup script, starts both server and client)
+| /data  (Data folder to index)
+| | /BMOcomCloned  (Put all scraped bmo.com .txt and .meta.txt here)
+| /infra  (Azure infrastructure definitions)
+| | main.bicep  (main definition file)
+| /scripts  (indexing startup scripts)
+| | /venv  (indexing Python venv)
+``` 
+
+### General install pipeline workflow
+When running `azd up`, this is generally what happens:
+1. Compile /infra bicep files to ARM template
+2. Come up with deployment plan and deploy Azure resources
+3. Save deployed resource ids to /.azure/*/.env  
+4. Run azure.yaml prepackaging (npm install/build) to package server and client artifacts
+5. push artifacts to Azure web app
+6. Run azure.yaml /scripts/prepdocs.ps1 to index files in /data
+- 6a. If using original, this will invoke prepdocs.py and upload /data/pdfs to form recognizer before indexing
+- 6b. if using bmo vdb indexer, this will invoke app/backend/vdbutils/prepdocs_bmo.py to create vectors before indexing. 
+  As vector indexing is still in preview, this requires manually adding pip dev feed to install venv dependency: 
+`pip install --extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/ azure-search-documents==11.4.0a20230509004` 
+
+Future updates to code only need to run `azd deploy`. This will run step 4 and 5.
+
+Try to run `azd up` only once if using free/basic plans. 
+We may encounter quota issue when running `azd up` again as replacing resources needs additional quota.
