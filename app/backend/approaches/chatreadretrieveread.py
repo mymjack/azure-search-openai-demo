@@ -4,9 +4,10 @@ from azure.search.documents.models import QueryType
 from approaches.approach import Approach
 from text import nonewlines
 
-# Simple retrieve-then-read implementation, using the Cognitive Search and OpenAI APIs directly. It first retrieves
-# top documents from search, then constructs a prompt with them, and then uses OpenAI to generate an completion 
-# (answer) with that prompt.
+# Simple read-then-retrieve-then-read implementation, using the Cognitive Search and OpenAI APIs directly. It first uses OpenAI to 
+# generate a query from previous chat history and the latest question. It then retrieves top documents from search using the 
+# generated query, then constructs a prompt with them, and then finally uses OpenAI to generate an completion 
+# (answer) with that prompt. Does not use langchain
 class ChatReadRetrieveReadApproach(Approach):
     prompt_prefix = """<|im_start|>system
 Assistant helps the company employees with their healthcare plan questions, and questions about the employee handbook. Be brief in your answers.

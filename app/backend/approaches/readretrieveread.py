@@ -16,6 +16,7 @@ from lookuptool import CsvLookupTool
 # second if more data is needed use the requested "tool" to retrieve it. The last call to GPT answers the actual question.
 # This is inspired by the MKRL paper[1] and applied here using the implementation in Langchain.
 # [1] E. Karpas, et al. arXiv:2205.00445
+# Uses ZeroShotAgent to quickly determine which tool to use and answer directly using the tool
 class ReadRetrieveReadApproach(Approach):
 
     template_prefix = \
@@ -110,7 +111,7 @@ class EmployeeInfoTool(CsvLookupTool):
         super().__init__(filename="data/employeeinfo.csv", 
                          key_field="name", 
                          name="Employee", 
-                         description="useful for answering questions about the employee, their benefits and other personal information",
+                         description="useful for answering questions about the employee, their insurances, benefits and other personal information",
                          callbacks=callbacks)
         self.func = self.employee_info
         self.employee_name = employee_name

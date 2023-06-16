@@ -12,6 +12,11 @@ from langchainadapters import HtmlCallbackHandler
 from text import nonewlines
 from typing import List
 
+# Attempt to breakdown the question into smaller pieces and recursively build and move along the chain to realize 
+# the final answer step by step. The tool search is used to retrieve the most relevant document, and the tool
+# look up is used to find the needed information in the last retrieved document.
+# Uses the ReActDocstoreAgent. This implementation does not seem to be very efficient as both tools do the same 
+# Azure Cognitive search
 class ReadDecomposeAsk(Approach):
     def __init__(self, search_client: SearchClient, openai_deployment: str, sourcepage_field: str, content_field: str):
         self.search_client = search_client

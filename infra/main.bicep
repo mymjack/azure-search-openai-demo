@@ -40,7 +40,9 @@ param formRecognizerSkuName string = 'S0'
 param gptDeploymentName string = 'davinci'
 param gptModelName string = 'text-davinci-003'
 param chatGptDeploymentName string = 'chat'
+param embeddingDeploymentName string = 'ada'
 param chatGptModelName string = 'gpt-35-turbo'
+param embeddingModelName string = 'text-embedding-ada-002'
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -102,110 +104,127 @@ module backend 'core/host/appservice.bicep' = {
     scmDoBuildDuringDeployment: true
     managedIdentity: true
     appSettings: {
-      AZURE_STORAGE_ACCOUNT: storage.outputs.name
+      // AZURE_STORAGE_ACCOUNT: storage.outputs.name
       AZURE_STORAGE_CONTAINER: storageContainerName
-      AZURE_OPENAI_SERVICE: openAi.outputs.name
+      // AZURE_OPENAI_SERVICE: openAi.outputs.name
       AZURE_SEARCH_INDEX: searchIndexName
-      AZURE_SEARCH_SERVICE: searchService.outputs.name
+      // AZURE_SEARCH_SERVICE: searchService.outputs.name
       AZURE_OPENAI_GPT_DEPLOYMENT: gptDeploymentName
       AZURE_OPENAI_CHATGPT_DEPLOYMENT: chatGptDeploymentName
+      
+      // TODO: Hardcoding to bypass quota limit issue
+      AZURE_STORAGE_ACCOUNT: 'stnnljxrgpw3pfk'
+      AZURE_OPENAI_SERVICE: 'cog-nnljxrgpw3pfk'
+      AZURE_SEARCH_SERVICE: 'gptkb-nnljxrgpw3pfk'
     }
   }
 }
 
-module openAi 'core/ai/cognitiveservices.bicep' = {
-  name: 'openai'
-  scope: openAiResourceGroup
-  params: {
-    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
-    location: openAiResourceGroupLocation
-    tags: tags
-    sku: {
-      name: openAiSkuName
-    }
-    deployments: [
-      {
-        name: gptDeploymentName
-        model: {
-          format: 'OpenAI'
-          name: gptModelName
-          version: '1'
-        }
-        scaleSettings: {
-          scaleType: 'Standard'
-        }
-      }
-      {
-        name: chatGptDeploymentName
-        model: {
-          format: 'OpenAI'
-          name: chatGptModelName
-          version: '0301'
-        }
-        scaleSettings: {
-          scaleType: 'Standard'
-        }
-      }
-    ]
-  }
-}
 
-module formRecognizer 'core/ai/cognitiveservices.bicep' = {
-  name: 'formrecognizer'
-  scope: formRecognizerResourceGroup
-  params: {
-    name: !empty(formRecognizerServiceName) ? formRecognizerServiceName : '${abbrs.cognitiveServicesFormRecognizer}${resourceToken}'
-    kind: 'FormRecognizer'
-    location: formRecognizerResourceGroupLocation
-    tags: tags
-    sku: {
-      name: formRecognizerSkuName
-    }
-  }
-}
+// module openAi 'core/ai/cognitiveservices.bicep' = {
+//   name: 'openai'
+//   scope: openAiResourceGroup
+//   params: {
+//     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+//     location: openAiResourceGroupLocation
+//     tags: tags
+//     sku: {
+//       name: openAiSkuName
+//     }
+//     deployments: [
+//       {
+//         name: gptDeploymentName
+//         model: {
+//           format: 'OpenAI'
+//           name: gptModelName
+//           version: '1'
+//         }
+//         scaleSettings: {
+//           scaleType: 'Standard'
+//         }
+//       }
+//       {
+//         name: chatGptDeploymentName
+//         model: {
+//           format: 'OpenAI'
+//           name: chatGptModelName
+//           version: '0301'
+//         }
+//         scaleSettings: {
+//           scaleType: 'Standard'
+//         }
+//       }
+//       {
+//         name: embeddingDeploymentName
+//         model: {
+//           format: 'OpenAI'
+//           name: embeddingModelName
+//           version: '2'
+//         }
+//         scaleSettings: {
+//           scaleType: 'Standard'
+//         }
+//       }
+//     ]
+//   }
+// }
 
-module searchService 'core/search/search-services.bicep' = {
-  name: 'search-service'
-  scope: searchServiceResourceGroup
-  params: {
-    name: !empty(searchServiceName) ? searchServiceName : 'gptkb-${resourceToken}'
-    location: searchServiceResourceGroupLocation
-    tags: tags
-    authOptions: {
-      aadOrApiKey: {
-        aadAuthFailureMode: 'http401WithBearerChallenge'
-      }
-    }
-    sku: {
-      name: searchServiceSkuName
-    }
-    semanticSearch: 'free'
-  }
-}
+// module formRecognizer 'core/ai/cognitiveservices.bicep' = {
+//   name: 'formrecognizer'
+//   scope: formRecognizerResourceGroup
+//   params: {
+//     name: !empty(formRecognizerServiceName) ? formRecognizerServiceName : '${abbrs.cognitiveServicesFormRecognizer}${resourceToken}'
+//     kind: 'FormRecognizer'
+//     location: formRecognizerResourceGroupLocation
+//     tags: tags
+//     sku: {
+//       name: formRecognizerSkuName
+//     }
+//   }
+// }
 
-module storage 'core/storage/storage-account.bicep' = {
-  name: 'storage'
-  scope: storageResourceGroup
-  params: {
-    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
-    location: storageResourceGroupLocation
-    tags: tags
-    publicNetworkAccess: 'Enabled'
-    sku: {
-      name: 'Standard_ZRS'
-    }
-    deleteRetentionPolicy: {
-      enabled: true
-      days: 2
-    }
-    containers: [
-      {
-        name: storageContainerName
-        publicAccess: 'None'
-      }
-    ]
-  }
-}
+// module searchService 'core/search/search-services.bicep' = {
+//   name: 'search-service'
+//   scope: searchServiceResourceGroup
+//   params: {
+//     name: !empty(searchServiceName) ? searchServiceName : 'gptkb-${resourceToken}'
+//     location: searchServiceResourceGroupLocation
+//     tags: tags
+//     authOptions: {
+//       aadOrApiKey: {
+//         aadAuthFailureMode: 'http401WithBearerChallenge'
+//       }
+//     }
+//     sku: {
+//       name: searchServiceSkuName
+//     }
+//     semanticSearch: 'free'
+//   }
+// }
+
+// module storage 'core/storage/storage-account.bicep' = {
+//   name: 'storage'
+//   scope: storageResourceGroup
+//   params: {
+//     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
+//     location: storageResourceGroupLocation
+//     tags: tags
+//     publicNetworkAccess: 'Enabled'
+//     sku: {
+//       name: 'Standard_ZRS'
+//     }
+//     deleteRetentionPolicy: {
+//       enabled: true
+//       days: 2
+//     }
+//     containers: [
+//       {
+//         name: storageContainerName
+//         publicAccess: 'None'
+//       }
+//     ]
+//   }
+// }
 
 // USER ROLES
 module openAiRoleUser 'core/security/role.bicep' = {
@@ -313,20 +332,29 @@ output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_RESOURCE_GROUP string = resourceGroup.name
 
-output AZURE_OPENAI_SERVICE string = openAi.outputs.name
+// output AZURE_OPENAI_SERVICE string = openAi.outputs.name
 output AZURE_OPENAI_RESOURCE_GROUP string = openAiResourceGroup.name
 output AZURE_OPENAI_GPT_DEPLOYMENT string = gptDeploymentName
 output AZURE_OPENAI_CHATGPT_DEPLOYMENT string = chatGptDeploymentName
 
-output AZURE_FORMRECOGNIZER_SERVICE string = formRecognizer.outputs.name
+// output AZURE_FORMRECOGNIZER_SERVICE string = formRecognizer.outputs.name
 output AZURE_FORMRECOGNIZER_RESOURCE_GROUP string = formRecognizerResourceGroup.name
 
 output AZURE_SEARCH_INDEX string = searchIndexName
-output AZURE_SEARCH_SERVICE string = searchService.outputs.name
+// output AZURE_SEARCH_SERVICE string = searchService.outputs.name
 output AZURE_SEARCH_SERVICE_RESOURCE_GROUP string = searchServiceResourceGroup.name
 
-output AZURE_STORAGE_ACCOUNT string = storage.outputs.name
+// output AZURE_STORAGE_ACCOUNT string = storage.outputs.name
 output AZURE_STORAGE_CONTAINER string = storageContainerName
 output AZURE_STORAGE_RESOURCE_GROUP string = storageResourceGroup.name
 
 output BACKEND_URI string = backend.outputs.uri
+
+
+
+// TODO: Hardcoding to bypass quota limit issue
+output AZURE_OPENAI_SERVICE string = 'cog-nnljxrgpw3pfk'
+output AZURE_FORMRECOGNIZER_SERVICE string = 'cog-fr-nnljxrgpw3pfk'
+output AZURE_SEARCH_SERVICE string = 'gptkb-nnljxrgpw3pfk'
+output AZURE_STORAGE_ACCOUNT string = 'stnnljxrgpw3pfk'
+
