@@ -2,30 +2,50 @@ import openai
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from azure.search.documents.models import Vector, QueryType
-from azure.search.documents import SearchClient
+from azure.search.documents import SearchClient, SearchItemPaged
 from enum import Enum
+from text import nonewlines
+
+from typing import Dict, List, Optional
+from pydantic import BaseModel, Extra
+from langchain.schema import BaseRetriever, Document, Field
 
 
-class SearchModes(Enum):
-    Basic = 'basic'        # Keyword based ranking
-    Vector = 'vector'      # Vector only ANN
-    Semantic = 'semantic'  # Azure ML ranking
-    Hybrid = 'hybrid'      # basic + vector
-    SemanticHybrid = 'semantic_hybrid'  # semantic + vector
+class SearchModes(Enum):   # Mode                  Estimated cost
+    Basic = 'basic'        # Keyword based ranking $
+    Vector = 'vector'      # Vector only ANN       $
+    Semantic = 'semantic'  # Azure ML ranking      $$$
+    Hybrid = 'hybrid'      # basic + vector        $$
+    SemanticHybrid = 'semantic_hybrid'  # semantic + vector $$$$
 
 
-class Retriever(object):
-    def __init__(self, search_client: SearchClient, embedding_deployment: str):
-        self.search_client = search_client
-        self.embedding_deployment = embedding_deployment
+class Retriever(BaseRetriever, BaseModel):  # Extending these two classes causes it to be recognized by langchain
+    search_client: SearchClient
+    embedding_deployment: str
+    search_kwargs: dict = Field(default_factory=dict)
+    last_sources: Optional[SearchItemPaged[dict]]
 
-    def retrieve(self, query, mode=SearchModes.Vector, top=3, filter=None, vector_search_k=3, use_semantic_captions=False):
-        results = None
+    class Config:
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        results = self.retrieve(query, **self.search_kwargs)
+        return [Document(
+            page_content=r.pop('final_content'),
+            metadata=r
+        ) for r in results]
+
+    def aget_relevant_documents(self, query: str) -> List[Document]:
+        return self.get_relevant_documents(query)
+
+    def retrieve(self, query, mode=SearchModes.Vector, top=3, filter=None, vector_search_k=3, use_semantic_captions=False, contents_max_len=250):
+        documents = None
         select = ["title", "content", "category", "source"]
         if mode == SearchModes.Basic:
-            results = self.search_client.search(search_text=query, filter=filter, top=top, select=select)
+            documents = self.search_client.search(search_text=query, filter=filter, top=top, select=select)
         elif mode == SearchModes.Vector:
-            results = self.search_client.search(
+            documents = self.search_client.search(
                 search_text="",
                 filter=filter,
                 vector=Vector(value=self.generate_embeddings(query), k=vector_search_k, fields="contentVector"),
@@ -33,7 +53,7 @@ class Retriever(object):
                 select=select
             )
         elif mode == SearchModes.Semantic:
-            results = self.search_client.search(
+            documents = self.search_client.search(
                 search_text="",
                 filter=filter,
                 query_type=QueryType.SEMANTIC,
@@ -45,7 +65,7 @@ class Retriever(object):
                 select=select
             )
         elif mode == SearchModes.Hybrid:
-            results = self.search_client.search(
+            documents = self.search_client.search(
                 search_text=query,
                 filter=filter,
                 vector=Vector(value=self.generate_embeddings(query), k=vector_search_k, fields="contentVector"),
@@ -53,7 +73,7 @@ class Retriever(object):
                 select=select
             )
         elif mode == SearchModes.SemanticHybrid:
-            results = self.search_client.search(
+            documents = self.search_client.search(
                 search_text="",
                 filter=filter,
                 vector=Vector(value=self.generate_embeddings(query), k=vector_search_k, fields="contentVector"),
@@ -66,7 +86,16 @@ class Retriever(object):
                 select=select
             )
 
-        return results
+        self.last_sources = documents
+
+        for doc in documents:
+            if use_semantic_captions:
+                doc['final_content'] = nonewlines(". ".join([c.text for c in doc['@search.captions']]))
+            else:
+                doc['final_content'] = nonewlines(doc['content'][:contents_max_len])
+
+        return documents
+
 
     # Function to generate embeddings for title and content fields, also used for query embeddings
     @retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(3))

@@ -11,6 +11,7 @@ from approaches.retrievethenread import RetrieveThenReadApproach
 from approaches.readretrieveread import ReadRetrieveReadApproach
 from approaches.readdecomposeask import ReadDecomposeAsk
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
+from approaches.chatconversationalreadretrieveread import ChatConversationalReadRetrieveReadApproach
 from azure.storage.blob import BlobServiceClient
 
 from vdbutils.indexer import Indexer
@@ -29,6 +30,7 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLO
 KB_FIELDS_CONTENT = os.environ.get("KB_FIELDS_CONTENT") or "content"
 KB_FIELDS_CATEGORY = os.environ.get("KB_FIELDS_CATEGORY") or "category"
 KB_FIELDS_SOURCEPAGE = os.environ.get("KB_FIELDS_SOURCEPAGE") or "sourcepage"
+KB_FIELDS_SOURCE = os.environ.get("KB_FIELDS_SOURCE") or "source"
 
 # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and Blob Storage (no secrets needed, 
 # just use 'az login' locally, and managed identity when deployed on Azure). If you need to use keys, use separate AzureKeyCredential instances with the 
@@ -56,7 +58,7 @@ search_client = SearchClient(
     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
     index_name=AZURE_SEARCH_INDEX,
     credential=azure_credential)
-retriever = Retriever(search_client, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
+retriever = Retriever(search_client=search_client, embedding_deployment=AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
 
 blob_client = BlobServiceClient(
     account_url=f"https://{AZURE_STORAGE_ACCOUNT}.blob.core.windows.net", 
@@ -72,7 +74,8 @@ ask_approaches = {
 }
 
 chat_approaches = {
-    "rrr": ChatReadRetrieveReadApproach(search_client, AZURE_OPENAI_CHATGPT_DEPLOYMENT, AZURE_OPENAI_GPT_DEPLOYMENT, KB_FIELDS_SOURCEPAGE, KB_FIELDS_CONTENT)
+    "rrr": ChatReadRetrieveReadApproach(search_client, AZURE_OPENAI_CHATGPT_DEPLOYMENT, AZURE_OPENAI_GPT_DEPLOYMENT, KB_FIELDS_SOURCEPAGE, KB_FIELDS_CONTENT),
+    "crrr": ChatConversationalReadRetrieveReadApproach(search_client, AZURE_OPENAI_CHATGPT_DEPLOYMENT, AZURE_OPENAI_GPT_DEPLOYMENT, AZURE_OPENAI_EMBEDDING_DEPLOYMENT, KB_FIELDS_SOURCE, KB_FIELDS_CONTENT)
 }
 
 # crawler = Crawler(...)

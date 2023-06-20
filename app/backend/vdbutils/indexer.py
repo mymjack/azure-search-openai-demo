@@ -1,18 +1,12 @@
-# Import required libraries  
-import os  
+import os
 import re
 import openai
 import time
-# from dotenv import load_dotenv
-from tenacity import retry, wait_random_exponential, stop_after_attempt 
-# from azure.core.credentials import AzureKeyCredential  
+from tenacity import retry, wait_random_exponential, stop_after_attempt
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient  
-from azure.search.documents.indexes import SearchIndexClient  
-# from azure.search.documents.models import Vector
-from azure.search.documents.indexes.models import (  
-    SearchIndex,  
-    SearchField,  
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.models import (
     SearchFieldDataType,  
     SimpleField,  
     SearchableField,  
@@ -27,7 +21,7 @@ from azure.search.documents.indexes.models import (
     HnswParameters
 )  
 VERBOSE = os.environ.get('VERBOSE') or True
-AZURE_SEARCH_SERVICE = os.environ.get("AZURE_SEARCH_SERVICE") or "gptkb"
+AZURE_SEARCH_SERVICE = os.environ.get("AZURE_SEARCH_SERVICE") or "gptkb-nnljxrgpw3pfk"
   
 # load_dotenv()
 
@@ -234,4 +228,4 @@ class Indexer(object):
             results = self.search_client.upload_documents(documents=batch)
             succeeded = sum([1 for r in results if r.succeeded])
             if VERBOSE: print(f"\tIndexed {len(results)} sections, {succeeded} succeeded")
-    
+

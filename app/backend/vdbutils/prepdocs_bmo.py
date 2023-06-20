@@ -36,42 +36,42 @@ openai.api_type = "azure_ad"
 openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
 openai.api_key = openai_token.token
 
-# Index all bmo files
-index_client = SearchIndexClient(
-    endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
-    credential=azure_credential)
-indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
-indexer.purge_index()
-
-for file in glob.glob('../../../data/BMOcomCloned/**/*.txt', recursive=True):
-    if file.endswith('meta.txt'):
-        continue
-    meta_file = file.replace('.txt', '.meta.txt')
-    title = os.path.basename(file).rsplit('.')[0]
-    source = ''
-    category = 'domain'
-    with open(file, encoding='utf8') as f:
-        content = f.read()
-    with open(meta_file, encoding='utf8') as f:
-        lines = f.readlines()
-        if len(lines) >= 2:
-            source, title = lines[:2]
-        elif len(lines) == 1:
-            source = lines[0]
-    document = {
-        'title': title.strip(),
-        'content': content.strip(),
-        'source': source.strip(),
-        'category': category
-    }
-    indexer.index(document)
+# # Index all bmo files
+# index_client = SearchIndexClient(
+#     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
+#     credential=azure_credential)
+# indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
+# indexer.purge_index()
+#
+# for file in glob.glob('../../../data/BMOcomCloned/**/*.txt', recursive=True):
+#     if file.endswith('meta.txt'):
+#         continue
+#     meta_file = file.replace('.txt', '.meta.txt')
+#     title = os.path.basename(file).rsplit('.')[0]
+#     source = ''
+#     category = 'domain'
+#     with open(file, encoding='utf8') as f:
+#         content = f.read()
+#     with open(meta_file, encoding='utf8') as f:
+#         lines = f.readlines()
+#         if len(lines) >= 2:
+#             source, title = lines[:2]
+#         elif len(lines) == 1:
+#             source = lines[0]
+#     document = {
+#         'title': title.strip(),
+#         'content': content.strip(),
+#         'source': source.strip(),
+#         'category': category
+#     }
+#     indexer.index(document)
 
 # Test retrieve
 search_client = SearchClient(
     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
     index_name=AZURE_SEARCH_INDEX,
     credential=azure_credential)
-retriever = Retriever(search_client, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
+retriever = Retriever(search_client=search_client, embedding_deployment=AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
 
 # results = retriever.retrieve("What insurances does bmo offer?", SearchModes.Basic)
 # [print(r) for r in results]
