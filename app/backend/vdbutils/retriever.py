@@ -22,8 +22,8 @@ class SearchModes(Enum):   # Mode                  Estimated cost
 class Retriever(BaseRetriever, BaseModel):  # Extending these two classes causes it to be recognized by langchain
     search_client: SearchClient
     embedding_deployment: str
-    search_kwargs: dict = Field(default_factory=dict)
-    last_sources: Optional[SearchItemPaged[dict]]
+    search_kwargs: Optional[dict] = Field(default_factory=dict)
+    last_sources: Optional[list[dict]]
 
     class Config:
         extra = Extra.forbid
@@ -31,15 +31,18 @@ class Retriever(BaseRetriever, BaseModel):  # Extending these two classes causes
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         results = self.retrieve(query, **self.search_kwargs)
-        return [Document(
-            page_content=r.pop('final_content'),
+
+        documents = [Document(
+            page_content=r['final_content'],
             metadata=r
         ) for r in results]
+
+        return documents
 
     def aget_relevant_documents(self, query: str) -> List[Document]:
         return self.get_relevant_documents(query)
 
-    def retrieve(self, query, mode=SearchModes.Vector, top=3, filter=None, vector_search_k=3, use_semantic_captions=False, contents_max_len=250):
+    def retrieve(self, query, mode=SearchModes.Vector, top=3, filter=None, vector_search_k=3, use_semantic_captions=False, contents_max_len=500):
         documents = None
         select = ["title", "content", "category", "source"]
         if mode == SearchModes.Basic:
@@ -86,15 +89,20 @@ class Retriever(BaseRetriever, BaseModel):  # Extending these two classes causes
                 select=select
             )
 
-        self.last_sources = documents
-
+        formatted_documents = []
         for doc in documents:
             if use_semantic_captions:
-                doc['final_content'] = nonewlines(". ".join([c.text for c in doc['@search.captions']]))
+                final_content = nonewlines(". ".join([c.text for c in doc['@search.captions']]))
             else:
-                doc['final_content'] = nonewlines(doc['content'][:contents_max_len])
+                final_content = nonewlines(doc['content'][:contents_max_len])
+            formatted_documents.append({
+                **doc,
+                'content': doc['content'].replace('B M O', 'BMO'),
+                'final_content': final_content.replace('B M O', 'BMO')
+            })
 
-        return documents
+        self.last_sources = formatted_documents
+        return formatted_documents
 
 
     # Function to generate embeddings for title and content fields, also used for query embeddings
