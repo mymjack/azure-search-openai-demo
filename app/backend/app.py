@@ -29,7 +29,7 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLO
 
 KB_FIELDS_CONTENT = os.environ.get("KB_FIELDS_CONTENT") or "content"
 KB_FIELDS_CATEGORY = os.environ.get("KB_FIELDS_CATEGORY") or "category"
-KB_FIELDS_SOURCEPAGE = os.environ.get("KB_FIELDS_SOURCEPAGE") or "source"
+KB_FIELDS_SOURCEPAGE = os.environ.get("KB_FIELDS_SOURCEPAGE") or "sourcepage"
 KB_FIELDS_SOURCE = os.environ.get("KB_FIELDS_SOURCE") or "source"
 
 # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and Blob Storage (no secrets needed, 
@@ -48,11 +48,13 @@ openai.api_type = "azure_ad"
 openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
 openai.api_key = openai_token.token
 
+logging.warning(os.environ)
+
 # Set up clients for Cognitive Search and Storage
-index_client = SearchIndexClient(
-    endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
-    credential=azure_credential)
-indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
+# index_client = SearchIndexClient(
+#     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
+#     credential=azure_credential)
+# indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
 
 search_client = SearchClient(
     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",

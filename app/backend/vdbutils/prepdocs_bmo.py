@@ -10,7 +10,7 @@ from azure.search.documents import SearchClient
 
 from vdbutils.indexer import Indexer
 from vdbutils.retriever import Retriever, SearchModes
-
+from traceback import print_exc
 
 AZURE_SEARCH_SERVICE = "gptkb-nnljxrgpw3pfk"
 AZURE_SEARCH_INDEX = "gptkbindex"
@@ -36,35 +36,44 @@ openai.api_type = "azure_ad"
 openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
 openai.api_key = openai_token.token
 
-# # Index all bmo files
-# index_client = SearchIndexClient(
-#     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
-#     credential=azure_credential)
-# indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
+# Index all bmo files
+index_client = SearchIndexClient(
+    endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net/",
+    credential=azure_credential)
+indexer = Indexer(index_client, AZURE_SEARCH_INDEX, AZURE_OPENAI_EMBEDDING_DEPLOYMENT)
 # indexer.purge_index()
-#
-# for file in glob.glob('../../../data/BMOcomCloned/**/*.txt', recursive=True):
-#     if file.endswith('meta.txt'):
-#         continue
-#     meta_file = file.replace('.txt', '.meta.txt')
-#     title = os.path.basename(file).rsplit('.')[0]
-#     source = ''
-#     category = 'domain'
-#     with open(file, encoding='utf8') as f:
-#         content = f.read()
-#     with open(meta_file, encoding='utf8') as f:
-#         lines = f.readlines()
-#         if len(lines) >= 2:
-#             source, title = lines[:2]
-#         elif len(lines) == 1:
-#             source = lines[0]
-#     document = {
-#         'title': title.strip(),
-#         'content': content.strip(),
-#         'source': source.strip(),
-#         'category': category
-#     }
-#     indexer.index(document)
+
+files = glob.glob('../../../data/BMOcomCloned/**/*.txt', recursive=True)
+total = len(files)
+for i, file in enumerate(files):
+    print(f'Indexing ({i}/{total}) ' + file)
+    try:
+        if file.endswith('meta.txt'):
+            continue
+        meta_file = file.replace('.txt', '.meta.txt')
+        title = os.path.basename(file).rsplit('.')[0]
+        source = ''
+        category = 'domain'
+        with open(file, encoding='utf8') as f:
+            content = f.read()
+        with open(meta_file, encoding='utf8') as f:
+            lines = f.readlines()
+            if len(lines) >= 2:
+                source, title = lines[:2]
+            elif len(lines) == 1:
+                source = lines[0]
+        document = {
+            'title': title.strip(),
+            'content': content.strip(),
+            'source': source.strip(),
+            'category': category
+        }
+        indexer.index(document)
+        os.unlink(file)
+        os.unlink(meta_file)
+    except:
+        print_exc()
+        print('Unable to index ' + file)
 
 # Test retrieve
 search_client = SearchClient(

@@ -42,7 +42,7 @@ class Retriever(BaseRetriever, BaseModel):  # Extending these two classes causes
     def aget_relevant_documents(self, query: str) -> List[Document]:
         return self.get_relevant_documents(query)
 
-    def retrieve(self, query, mode=SearchModes.Vector, top=3, filter=None, vector_search_k=3, use_semantic_captions=False, contents_max_len=500):
+    def retrieve(self, query, mode=SearchModes.Vector, top=3, filter=None, vector_search_k=3, use_semantic_captions=False, contents_max_len=1500):
         documents = None
         select = ["title", "content", "category", "source"]
         if mode == SearchModes.Basic:

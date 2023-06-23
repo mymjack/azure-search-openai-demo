@@ -1,8 +1,6 @@
 import openai
 from approaches.approach import Approach
 from azure.search.documents import SearchClient
-from azure.search.documents.models import QueryType
-from langchain.llms.openai import AzureOpenAI
 from langchain.callbacks.manager import CallbackManager, Callbacks
 from langchain.chains import LLMChain, RetrievalQAWithSourcesChain
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory, ConversationSummaryBufferMemory
@@ -16,24 +14,6 @@ from langchain.chains.qa_with_sources.loading import load_qa_with_sources_chain
 from .templates import combine_prompt_template, document_prompt_template, main_prompt_template_prefix, main_prompt_template_suffix
 from typing import Any, Dict, List, Optional, Union
 from langchain.schema import HumanMessage, AIMessage
-from langchain.agents.conversational.output_parser import ConvoOutputParser
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
-import re
-
-
-class EarlyStopConvoOutputParser(ConvoOutputParser):
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        if f"{self.ai_prefix}:" in text:
-            return AgentFinish(
-                {"output": text.split(f"{self.ai_prefix}:")[-1].split('New input', 1)[0].strip()}, text
-            )
-        regex = r"Action: (.*?)[\n]*Action Input: (.*)"
-        match = re.search(regex, text)
-        if not match:
-            raise OutputParserException(f"Could not parse LLM output: `{text}`")
-        action = match.group(1)
-        action_input = match.group(2)
-        return AgentAction(action.strip(), action_input.strip(" ").strip('"'), text)
 
 
 class StatelessAgentExecutor(AgentExecutor):
@@ -71,7 +51,7 @@ class ChatConversationalReadRetrieveReadApproach(Approach):
             vector_search_k=overrides.get("vector_search_k") or 3
         )
 
-        llm_search = AzureOpenAI(deployment_name=self.gpt_deployment, temperature=0, openai_api_key=openai.api_key)
+        llm_bmo_search = AzureOpenAI(deployment_name=self.gpt_deployment, temperature=0.5, openai_api_key=openai.api_key)
         prompt = PromptTemplate(template=combine_prompt_template,
                                 input_variables=["summaries", "question"])
         document_prompt = PromptTemplate(template=document_prompt_template,
@@ -82,12 +62,11 @@ class ChatConversationalReadRetrieveReadApproach(Approach):
                               search_kwargs=search_kwargs)
 
         # This chain combine retrieved sources to knowledge summaries
-        qa_chain = load_qa_with_sources_chain(llm_search, chain_type="stuff",
+        qa_chain = load_qa_with_sources_chain(llm_bmo_search, chain_type="stuff",
                                               prompt=prompt,
                                               document_prompt=document_prompt)
         chain = RetrievalQAWithSourcesChain(combine_documents_chain=qa_chain, retriever=retriever,
                                             reduce_k_below_max_tokens=True, max_tokens_limit=3000)
-                                            # return_source_documents=True)
 
         # result = chain.run(q)
         result = chain({"question": q}, return_only_outputs=True)
@@ -125,21 +104,14 @@ class ChatConversationalReadRetrieveReadApproach(Approach):
         tools = [
             Tool(name="BMOSearch",
                  func=lambda q: self.bmo_search(q, overrides),
-                 description="useful for answering questions about the employee, their insurances, benefits and other personal information",
+                 description="MUST use this tool to answer any BMO related questions and follow up questions. Include all the information you have about the user in the Action Input",
                  callbacks=cb_manager,
-                 return_direct=True)
-
-            # Tool(name="OtherQuestions",
-            #     func=lambda q:q,
-            #     description="MUST use this tool when the question asks for information on other banks, organizaions, " \
-            #                 "or individual such as HSBC, TD, RBC, or if user asks math questions such as \"what is 1+1\"",
-            #     return_direct=True
-            # )
+                 return_direct=True),
         ]
 
         memory = self.reconstruct_memory(history)
 
-        llm_chat = AzureOpenAI(deployment_name=self.chatgpt_deployment, temperature=overrides.get("temperature") or 0.3, openai_api_key=openai.api_key)
+        llm_chat = AzureOpenAI(deployment_name=self.chatgpt_deployment, temperature=overrides.get("temperature") or 0.5, openai_api_key=openai.api_key)
 
         # Main chain
         prompt = ConversationalAgent.create_prompt(
@@ -151,10 +123,11 @@ class ChatConversationalReadRetrieveReadApproach(Approach):
 
         chain = LLMChain(llm=llm_chat, prompt=prompt)
         executor = StatelessAgentExecutor.from_agent_and_tools(
-            agent=ConversationalAgent(llm_chain=chain, tools=tools, output_parser=EarlyStopConvoOutputParser()),
+            agent=ConversationalAgent(llm_chain=chain, tools=tools),
             tools=tools,
             verbose=True,
             memory=memory,
+            max_iterations=2,
             early_stopping_method="generate",
             return_only_outputs=True,
             callback_manager=cb_manager
@@ -164,5 +137,8 @@ class ChatConversationalReadRetrieveReadApproach(Approach):
         # Remove references to tool names that might be confused with a citation
         result = result.replace("[BMOSearch]", "")  # .replace("[OtherQuestions]", "")
 
-        return {"data_points": self.format_data_sources(), "answer": result, "thoughts": cb_handler.get_and_reset_log()}
+        return {"data_points": self.format_data_sources(), "answer": remove_end_token(result), "thoughts": remove_end_token(cb_handler.get_and_reset_log())}
 
+
+def remove_end_token(text):
+    return text.replace('<|im_end|>', '').replace('&lt;|im_end|&gt;', '')
