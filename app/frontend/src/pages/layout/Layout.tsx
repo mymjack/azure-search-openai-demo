@@ -38,7 +38,7 @@ const Layout = () => {
                             </li>
                         </ul>
                     </nav>
-                    <h4 className={styles.headerRightText}> DigitalCore </h4>
+                    <h3 className={styles.headerTitle}> DigitalCore </h3>
                 </div>
             </header>
 
