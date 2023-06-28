@@ -128,7 +128,7 @@
   "synapseWorkspacesSqlPoolsSpark": "synsp",
   "timeSeriesInsightsEnvironments": "tsi-",
   "webServerFarms": "plan-",
-  "webSitesAppService": "app-",
+  "webSitesAppService": "bmo-app-",
   "webSitesAppServiceEnvironment": "ase-",
   "webSitesFunctions": "func-",
   "webStaticSites": "stapp-"
