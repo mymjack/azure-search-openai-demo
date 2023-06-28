@@ -1,7 +1,10 @@
+from functools import lru_cache
+import json
 import os
 import mimetypes
 import time
 import logging
+from repr_tool import MyPythonAstREPLTool
 import openai
 from flask import Flask, request, jsonify
 from azure.identity import DefaultAzureCredential
@@ -13,6 +16,11 @@ from approaches.readdecomposeask import ReadDecomposeAsk
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 from approaches.chatconversationalreadretrieveread import ChatConversationalReadRetrieveReadApproach
 from azure.storage.blob import BlobServiceClient
+from langchain.agents import create_pandas_dataframe_agent
+from langchain.llms.openai import AzureOpenAI
+# from langchain.agents.agent_types import AgentType
+import pandas as pd
+
 
 from vdbutils.indexer import Indexer
 from vdbutils.retriever import Retriever
@@ -127,6 +135,62 @@ def chat():
     except Exception as e:
         logging.exception("Exception in /chat")
         return jsonify({"error": str(e)}), 500
+
+@app.route("/app_review/table/<platform>", methods=["GET"])
+def app_review_table(platform):
+    if platform not in ["ios", "android"]:
+        return jsonify({"error": "unknown platform"}), 400
+    return jsonify({
+        "table": pd.DataFrame.from_dict(get_app_review_json(platform), orient="columns").to_dict(orient="dict")
+    }), 200, {"Content-Type": "application/json"}
+
+
+@app.route("/app_review/question/<platform>", methods=["POST"])
+def app_review_question(platform):
+    if platform not in ["ios", "android"]:
+        return jsonify({"error": "unknown platform"}), 400
+    ensure_openai_token()
+    try:
+        df = pd.DataFrame.from_dict(get_app_review_json(platform), orient="columns")
+        question = request.json["question"]
+        PREFIX = """
+You are working with a pandas dataframe in Python. The name of the dataframe is `df`.
+each row is an app review with its Date, Rating and releated app Version.
+The review content is in the Body column.
+The topics columns contains a list of summaried issues from the review.
+You should use the tools below to answer the question posed of you:"""
+        agent = create_pandas_dataframe_agent(
+            AzureOpenAI(
+                openai_api_key=openai.api_key,
+                deployment_name=AZURE_OPENAI_CHATGPT_DEPLOYMENT,
+                # openai_api_base=openai.api_base,
+                # openai_api_version=openai.api_version,
+                temperature=0,
+                # model="gpt-3.5-turbo",
+            ),
+            df,
+            verbose=True,
+            prefix=PREFIX,
+            # agent_type=AgentType.OPENAI_FUNCTIONS,
+        )
+        tool = MyPythonAstREPLTool(realtool=agent.tools[0])
+        agent.tools = [tool]
+        answer = agent.run(question)
+        # The azure gpt3.5 model wants to ask follow up questions by itself at the end of the answer...
+        answer = answer.split('\nQuestion:')[0]
+        return jsonify({
+            "answer": answer,
+            "table": tool.result.to_dict(orient="dict"),
+        }), 200, {"Content-Type": "application/json"}
+    except Exception as e:
+        logging.exception("Exception in /app_review/question")
+        return jsonify({"error": str(e)}), 500
+
+
+@lru_cache()
+def get_app_review_json(platform):
+    blob = blob_container.get_blob_client(f"app_review/{platform}_negative_result.json").download_blob()
+    return json.loads(blob.readall())
 
 def ensure_openai_token():
     global openai_token
