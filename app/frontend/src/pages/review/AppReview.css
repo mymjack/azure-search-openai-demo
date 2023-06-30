@@ -1,0 +1,128 @@
+.oneshotContainer {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+}
+
+.oneshotTopSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.oneshotBottomSection {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-start;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.oneshotTitle {
+    font-size: 4rem;
+    font-weight: 600;
+    margin-top: 130px;
+}
+
+@media only screen and (max-width: 800px) {
+    .oneshotTitle {
+        font-size: 3rem;
+        font-weight: 600;
+        margin-top: 0;
+    }
+}
+
+.oneshotQuestionInput {
+    max-width: 800px;
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.oneshotAnswerContainer {
+    max-width: 780px;
+    width: 100%;
+    padding: 20px;
+    background: rgb(249, 249, 249);
+    border-radius: 8px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
+    outline: transparent solid 1px;
+    margin-bottom: 10px;
+}
+
+.oneshotAnalysisPanel {
+    width: 600px;
+    margin-left: 20px;
+}
+
+.oneshotSettingsSeparator {
+    margin-top: 15px;
+}
+
+.settingsButton {
+    align-self: flex-end;
+    margin-right: 20px;
+    margin-top: 20px;
+}
+
+table {
+    background: white;
+}
+
+thead {
+    position: sticky;
+    top: 0px;
+    margin: 0;
+    background: white;
+    box-shadow: 0 0 4px 0 rgba(0,0,0,0.1);
+
+}
+
+.masonryReviewGrid {
+    display: -webkit-box; /* Not needed if autoprefixing */
+    display: -ms-flexbox; /* Not needed if autoprefixing */
+    display: flex;
+    width: auto;
+}
+.masonryReviewColumn {
+  background-clip: padding-box;
+}
+
+.controls {
+    box-shadow: 0 -2px 4px 0 rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 3px;
+}
+
+.toggle {
+    margin-bottom: 0;
+    padding: 10px;
+}
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 1920px;
+    margin: auto;
+}
+
+.tableHeader th {
+    padding: 5px;
+    text-align: center;
+}
+
+.tableRow td {
+    padding: 5px;
+    text-align: center;
+}
+
+.tableRow:nth-child(odd) {
+    background: #f8f8f8;
+}
