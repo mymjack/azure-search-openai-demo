@@ -9,10 +9,12 @@ import { Stack, IStackTokens } from '@fluentui/react';
 
 import { Answer, AnswerError } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
-import { ExampleList } from "../../components/Example";
+import { ExampleList } from "../../components/Example/ExampleListReview";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { Review } from "./Review";
 import Masonry from 'react-masonry-css'
+
+import { AnswerIcon } from "../../components/Answer/AnswerIcon";
 
 // Interface
 export enum Platform {
@@ -30,11 +32,13 @@ export type ReviewRequest = {
 
 export type ReviewTableResponse = {
     table: object;
+    error?: string;
 }
 
 export type ReviewResponse = {
     answer: string;
     table: object;
+    error?: string;
 }
 
 // API calls
@@ -92,8 +96,8 @@ const AppReview = () => {
         700: 1
       };
 
-    const setTable = (tableData) => {
-        _setTable(tableData.map((t, i) => {return {...t, id:i}}))
+    const setTable = (tableData: any) => {
+        _setTable(tableData.map((t:any, i:number) => {return {...t, id:i}}))
     }
 
     // API wrappers
@@ -135,9 +139,9 @@ const AppReview = () => {
         }
     };
 
-    const renderReviews = (data) => {
+    const renderReviews = (data:any) => {
         if (!data.length) return <></>
-        let review = data.map((r, i) => <Review 
+        let review = data.map((r:any, i:number) => <Review 
             key={'review-' + r['id']}
             comment={r['Body']}
             date={r['Date']}
@@ -154,7 +158,7 @@ const AppReview = () => {
         </Masonry>
     }
 
-    const renderTable = (data) => {
+    const renderTable = (data:any) => {
         if (!data.length) return <></>;
 
         const columns : object[] = 
@@ -173,8 +177,8 @@ const AppReview = () => {
         />
     }
 
-    const switchDisplay = (e, checked) => {
-        setShowAsTable(checked ? true : false);
+    const switchDisplay = (e:any, checked:boolean|undefined) => {
+        setShowAsTable(!!checked);
     }
 
     useEffect(() => {loadTableApiRequest()}, [platform]);
@@ -210,7 +214,7 @@ const AppReview = () => {
             <div className="oneshotTopSection">
                 <div className="oneshotQuestionInput">
                     <QuestionInput
-                        placeholder="Example: Does my plan cover annual eye exams?"
+                        placeholder="Example: What are the top 10 topics since 2023-01-01?"
                         disabled={isLoading}
                         onSend={question => makeApiRequest(question)}
                     />
@@ -220,9 +224,15 @@ const AppReview = () => {
                 {isLoading && <Spinner label="Generating answer" />}
                 {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} />}
                 {!isLoading && answer && !error && (
-                    <div className="oneshotAnswerContainer">
-                        {answer}
-                    </div>
+                    <>
+                        <div className="oneshotAnswerContainer">
+                            <AnswerIcon/><br/>
+                            {answer}
+                        </div>
+                        <div style={{maxHeight:'40vh',overflow:'auto',width: '100%'}}>
+                        {renderTable(answerTable)}
+                        </div>
+                    </>
                 )}
                 {error ? (
                     <div className="oneshotAnswerContainer">
@@ -230,9 +240,6 @@ const AppReview = () => {
                     </div>
                 ) : null}
                 
-            <div style={{maxHeight:'40vh',overflow:'auto',width: '100%'}}>
-            {renderTable(answerTable)}
-            </div>
             </div>
         </div>
     );

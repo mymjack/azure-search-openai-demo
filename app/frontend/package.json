@@ -14,6 +14,7 @@
     "@happymary16/react-bootstrap-table-next": "^4.0.3",
     "@react-spring/web": "^9.7.1",
     "@tanstack/react-table": "^8.9.3",
+    "@types/react-bootstrap-table-next": "^4.0.19",
     "dompurify": "^3.0.1",
     "events": "^3.3.0",
     "react": "^18.2.0",

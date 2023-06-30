@@ -8,10 +8,7 @@ export type ExampleModel = {
 };
 
 const EXAMPLES: ExampleModel[] = [
-    {
-        text: "What benefits do you offer for students?",
-        value: "What benefits do you offer for students?"
-    },
+    { text: "What benefits do you offer for students?", value: "What benefits do you offer for students?"},
     { text: "Does BMO have any first-time home buyer incentives?", value: "Does BMO have any first-time home buyer incentives?" },
     { text: "What travel credit cards can I get?", value: "What travel credit cards can I get?" }
 ];

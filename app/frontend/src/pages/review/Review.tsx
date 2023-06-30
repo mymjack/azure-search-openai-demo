@@ -22,7 +22,17 @@ import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 
-export const Review = ({comment, date, rating, version, tags, topics}) => {
+
+interface Props {
+    comment: string;
+    date: string;
+    rating: number;
+    version: string;
+    tags: string[];
+    topics: string[];
+}
+
+export const Review = ({comment, date, rating, version, tags, topics}:Props) => {
     let id = useId('review');
     const [tagTypeToShow, setTagTypeToShow] = useState('topics')
     
