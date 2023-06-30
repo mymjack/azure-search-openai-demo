@@ -21,6 +21,8 @@ from langchain.llms.openai import AzureOpenAI
 # from langchain.agents.agent_types import AgentType
 import pandas as pd
 
+from flask_cors import CORS, cross_origin
+
 
 from vdbutils.indexer import Indexer
 from vdbutils.retriever import Retriever
@@ -141,7 +143,7 @@ def app_review_table(platform):
     if platform not in ["ios", "android"]:
         return jsonify({"error": "unknown platform"}), 400
     return jsonify({
-        "table": pd.DataFrame.from_dict(get_app_review_json(platform), orient="columns").to_dict(orient="dict")
+        "table": pd.DataFrame.from_dict(get_app_review_json(platform), orient="columns")[:300].to_dict(orient="records")
     }), 200, {"Content-Type": "application/json"}
 
 
@@ -177,10 +179,10 @@ You should use the tools below to answer the question posed of you:"""
         agent.tools = [tool]
         answer = agent.run(question)
         # The azure gpt3.5 model wants to ask follow up questions by itself at the end of the answer...
-        answer = answer.split('\nQuestion:')[0]
+        answer = answer.split('\nQuestion:')[0].replace('<|im_end|>', '')
         return jsonify({
             "answer": answer,
-            "table": tool.result.to_dict(orient="dict"),
+            "table": tool.result[:1000].to_dict(orient="records"),
         }), 200, {"Content-Type": "application/json"}
     except Exception as e:
         logging.exception("Exception in /app_review/question")
@@ -199,4 +201,5 @@ def ensure_openai_token():
         openai.api_key = openai_token.token
     
 if __name__ == "__main__":
+    CORS(app)
     app.run()

@@ -14,8 +14,10 @@
     "@react-spring/web": "^9.7.1",
     "dompurify": "^3.0.1",
     "react": "^18.2.0",
+    "react-bootstrap-table-next": "^4.0.3",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.8.1"
+    "react-router-dom": "^6.8.1",
+    "react-scripts": "^1.1.4"
   },
   "devDependencies": {
     "@types/dompurify": "^2.4.0",
