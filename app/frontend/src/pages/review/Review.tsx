@@ -1,6 +1,7 @@
 import React from "react";
 import { useRef, useState, useEffect } from "react";
 import { Rating, Checkbox, ChoiceGroup, IChoiceGroupOption, Panel, PrimaryButton, DefaultButton, Spinner, TextField, SpinButton, Slider } from "@fluentui/react";
+import { useId } from '@fluentui/react-hooks';
 import BootstrapTable from 'react-bootstrap-table-next'; 
 import {
     DocumentCard,
@@ -13,7 +14,7 @@ import {
     IDocumentCardActivityPerson,
   } from '@fluentui/react/lib/DocumentCard';
 
-import styles from "./Review.module.css";
+import "./Review.css";
 import { Stack, IStackTokens } from '@fluentui/react';
 
 import { Answer, AnswerError } from "../../components/Answer";
@@ -22,27 +23,30 @@ import { ExampleList } from "../../components/Example";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 
 export const Review = ({comment, date, rating, version, tags, topics}) => {
+    let id = useId('review');
+    const [tagTypeToShow, setTagTypeToShow] = useState('topics')
+    
     return (
-        <div className={styles.review}>
+        <div className="review">
             <div>{comment}</div>
             <div>
                 <Rating 
-                    className={styles.rating}
+                    className="rating"
                     max={5}
                     defaultRating={rating}
                     ariaLabel="Rating"
                     ariaLabelFormat="{0} of {1}"
                     readOnly /> 
-                <span className={styles.ratingText}>({rating}/5)</span>
-                <span className={styles.ratingTag}>{date}</span>
-                <span className={styles.ratingTag}>v{version}</span>
+                <span className="ratingText">({rating}/5)</span>
+                <span className="ratingTag">{date}</span>
+                <span className="ratingTag">v{version}</span>
             </div>
-            {/* <div>Tags: 
-                <span className={styles.ratingTag}>{tags}</span>
-            </div> */}
-            <div>Topics: 
-                <span className={styles.ratingTag}>{topics}</span>
-            </div>
+            {tagTypeToShow == 'topics' && <div><span className="tagType" onClick={() => setTagTypeToShow('tags')}>Topics: </span>
+                {topics.map((t, i) => <span key={i} className="ratingTag ratingTagPrimary">{t}</span>)}
+            </div>}
+            {tagTypeToShow == 'tags' && <div><span className="tagType" onClick={() => setTagTypeToShow('topics')}>Tags: </span>
+                {tags.map((t, i) => <span key={i} className="ratingTag ratingTagPrimary">{t}</span>)}
+            </div>}
             
         </div>
     );

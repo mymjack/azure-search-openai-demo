@@ -1,9 +1,10 @@
 import React from "react";
 import { useRef, useState, useEffect } from "react";
-import { Checkbox, ChoiceGroup, IChoiceGroupOption, Panel, PrimaryButton, DefaultButton, Spinner, TextField, SpinButton, Slider } from "@fluentui/react";
-import BootstrapTable from 'react-bootstrap-table-next'; 
+import { Checkbox, ChoiceGroup, IChoiceGroupOption, Panel, PrimaryButton, DefaultButton, Spinner, TextField, SpinButton, Slider, Toggle } from "@fluentui/react";
+import BootstrapTable from '@happymary16/react-bootstrap-table-next'; 
+import { useId } from '@fluentui/react-hooks';
 
-import styles from "./AppReview.module.css";
+import "./AppReview.css";
 import { Stack, IStackTokens } from '@fluentui/react';
 
 import { Answer, AnswerError } from "../../components/Answer";
@@ -11,6 +12,7 @@ import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { Review } from "./Review";
+import Masonry from 'react-masonry-css'
 
 // Interface
 export enum Platform {
@@ -77,22 +79,27 @@ const AppReview = () => {
     const [platform, setPlatform] = useState(Platform.Android);
 
     const lastQuestionRef = useRef<string>("");
+    const [showAsTable, setShowAsTable] = useState(false)
 
-    const [table, setTable] = useState<object>({});
-    const [answerTable, setAnswerTable] = useState<object>({});
+    const [table, _setTable] = useState<object>([]);
+    const [answerTable, setAnswerTable] = useState<object>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<unknown>();
     const [answer, setAnswer] = useState<string>();
+    const masonryBreakPoints = {
+        default: 3,
+        1100: 2,
+        700: 1
+      };
 
-    const [activeCitation, setActiveCitation] = useState<string>();
-    const [activeAnalysisPanelTab, setActiveAnalysisPanelTab] = useState<AnalysisPanelTabs | undefined>(undefined);
+    const setTable = (tableData) => {
+        _setTable(tableData.map((t, i) => {return {...t, id:i}}))
+    }
 
     // API wrappers
     const loadTableApiRequest = async () => {
         error && setError(undefined);
         // setIsLoading(true);
-        setActiveCitation(undefined);
-        setActiveAnalysisPanelTab(undefined);
 
         try {
             const request: ReviewTableRequest = {
@@ -112,8 +119,6 @@ const AppReview = () => {
 
         error && setError(undefined);
         setIsLoading(true);
-        setActiveCitation(undefined);
-        setActiveAnalysisPanelTab(undefined);
 
         try {
             const request: ReviewRequest = {
@@ -130,15 +135,46 @@ const AppReview = () => {
         }
     };
 
-    const renderTable = (tableData) => {
-        if (!tableData.length) return <></>;
+    const renderReviews = (data) => {
+        if (!data.length) return <></>
+        let review = data.map((r, i) => <Review 
+            key={'review-' + r['id']}
+            comment={r['Body']}
+            date={r['Date']}
+            rating={r['Rating']}
+            version={r['Version']}
+            tags={r['tags'].split(',')}
+            topics={r['topics']}
+        />)
+        return <Masonry
+            breakpointCols={masonryBreakPoints}
+            className="masonryReviewGrid"
+            columnClassName="masonryReviewColumn">
+            {review}
+        </Masonry>
+    }
 
-        const columns : object[] = Object.keys(tableData[0]).map(k => { return {
+    const renderTable = (data) => {
+        if (!data.length) return <></>;
+
+        const columns : object[] = 
+        Object.keys(data[0]).filter(k=>k!='id').map(k => { return {
             dataField: k,
             text: k
         }});
 
-        return <BootstrapTable keyField='id' data={ tableData } columns={ columns } />
+        return <BootstrapTable 
+        keyField='id' 
+        data={ data } 
+        columns={ columns } 
+        headerClasses="tableHeader"
+        rowClasses="tableRow"
+        className="table"
+        />
+    }
+
+    const switchDisplay = (e, checked) => {
+        setShowAsTable(checked ? true : false);
     }
 
     useEffect(() => {loadTableApiRequest()}, [platform]);
@@ -149,8 +185,13 @@ const AppReview = () => {
     };
 
     return (
-        <div className={styles.oneshotContainer}>
-            <Stack horizontal tokens={{childrenGap: 0, padding: 10}}>
+        <div className="oneshotContainer">
+            <div style={{height:'50vh',overflow:'auto',width: '100%'}}>
+            {showAsTable ? renderTable(table) : renderReviews(table)}
+
+            </div>
+            <div className="controls">
+                <span>
                 {platform == Platform.Android ?
                 <PrimaryButton text="Android" 
                     onClick={() => setPlatform(Platform.Android)} />
@@ -161,13 +202,13 @@ const AppReview = () => {
                     onClick={() => setPlatform(Platform.IOS)} />
                 :<DefaultButton text="iOS" 
                     onClick={() => setPlatform(Platform.IOS)} />}
-            </Stack>
-            <div style={{maxHeight:'40vh',overflow:'auto',width: '100%'}}>
-            {renderTable(table)}
+                </span>
+                <span>
+                    <Toggle className="toggle" onText="Showing above as Table" offText="Showing above as Reviews" onChange={switchDisplay} /> 
+                </span>
             </div>
-            <div className={styles.oneshotTopSection}>
-                {/* <h1 className={styles.oneshotTitle}>Ask your data</h1> */}
-                <div className={styles.oneshotQuestionInput}>
+            <div className="oneshotTopSection">
+                <div className="oneshotQuestionInput">
                     <QuestionInput
                         placeholder="Example: Does my plan cover annual eye exams?"
                         disabled={isLoading}
@@ -175,16 +216,16 @@ const AppReview = () => {
                     />
                 </div>
             </div>
-            <div className={styles.oneshotBottomSection}>
+            <div className="oneshotBottomSection">
                 {isLoading && <Spinner label="Generating answer" />}
                 {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} />}
                 {!isLoading && answer && !error && (
-                    <div className={styles.oneshotAnswerContainer}>
+                    <div className="oneshotAnswerContainer">
                         {answer}
                     </div>
                 )}
                 {error ? (
-                    <div className={styles.oneshotAnswerContainer}>
+                    <div className="oneshotAnswerContainer">
                         <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
                     </div>
                 ) : null}
@@ -193,14 +234,6 @@ const AppReview = () => {
             {renderTable(answerTable)}
             </div>
             </div>
-            -- Below are WIP. Please discard--
-            <Review comment="Hi, this is a reiview with comment"
-                date="2022-01-02"
-                rating="3"
-                version="3.2"
-                tags={['hi', 'b']}
-                topics={['topic w', 'topic d']}
-            />
         </div>
     );
 };
