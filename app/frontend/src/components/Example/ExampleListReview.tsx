@@ -8,7 +8,7 @@ export type ExampleModel = {
 };
 
 const EXAMPLES: ExampleModel[] = [
-    { text: "What are the top topics since 2023?", value: "What are the top 10 topics since 2023-01-01?" },
+    { text: "What are the most common topics since 2023?", value: "What are the top 10 topics since 2023-01-01?" },
     { text: "What is the average rating of reviews since 2023?", value: "What is the average rating of reviews since 2023-01-01?" },
     { text: "What do customer say regarding login issues?", value: "What do customer say regarding login issues?" }
 ];

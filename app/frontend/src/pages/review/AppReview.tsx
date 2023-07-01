@@ -1,5 +1,5 @@
 import React from "react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { Checkbox, ChoiceGroup, IChoiceGroupOption, Panel, PrimaryButton, DefaultButton, Spinner, TextField, SpinButton, Slider, Toggle } from "@fluentui/react";
 import BootstrapTable from '@happymary16/react-bootstrap-table-next'; 
 import { useId } from '@fluentui/react-hooks';
@@ -43,7 +43,7 @@ export type ReviewResponse = {
 
 // API calls
 export async function reviewTableApi(options: ReviewTableRequest): Promise<ReviewTableResponse> {
-    const response = await fetch(`http://localhost:5000/app_review/table/${options.platform}`, {
+    const response = await fetch(`app_review/table/${options.platform}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
@@ -60,7 +60,7 @@ export async function reviewTableApi(options: ReviewTableRequest): Promise<Revie
 
 
 export async function reviewApi(options: ReviewRequest): Promise<ReviewResponse> {
-    const response = await fetch(`http://localhost:5000/app_review/question/${options.platform}`, {
+    const response = await fetch(`app_review/question/${options.platform}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -78,12 +78,20 @@ export async function reviewApi(options: ReviewRequest): Promise<ReviewResponse>
     return parsedResponse;
 }
 
+const interleave = (arr:string[], insert:any) => ([] as string[]).concat(...arr.map(n => [n, insert])).slice(0, -1);
+
 
 const AppReview = () => {
     const [platform, setPlatform] = useState(Platform.Android);
+    const [fetchTableApi, setFetchTableApi] = useState('');
+
+    const tables = useRef({
+        [Platform.Android]:null as any, 
+        [Platform.IOS]:null as any
+    });
 
     const lastQuestionRef = useRef<string>("");
-    const [showAsTable, setShowAsTable] = useState(false)
+    const [showAsTable, setShowAsTable] = useState(false);
 
     const [table, _setTable] = useState<object>([]);
     const [answerTable, setAnswerTable] = useState<object>([]);
@@ -105,16 +113,22 @@ const AppReview = () => {
         error && setError(undefined);
         // setIsLoading(true);
 
+        if (tables.current[platform] != null) {
+            setTable(tables.current[platform])
+            return
+        }
+
         try {
             const request: ReviewTableRequest = {
                 platform: platform
             };
             const result = await reviewTableApi(request);
             setTable(result.table);
+            tables.current[platform] = result.table;
         } catch (e) {
             setError(e);
         } finally {
-            setIsLoading(false);
+            // setIsLoading(false);
         }
     };
 
@@ -182,7 +196,6 @@ const AppReview = () => {
     }
 
     useEffect(() => {loadTableApiRequest()}, [platform]);
-    useEffect(() => {loadTableApiRequest()}, []);
 
     const onExampleClicked = (example: string) => {
         makeApiRequest(example);
@@ -214,7 +227,7 @@ const AppReview = () => {
             <div className="oneshotTopSection">
                 <div className="oneshotQuestionInput">
                     <QuestionInput
-                        placeholder="Example: What are the top 10 topics since 2023-01-01?"
+                        placeholder="Example: What are the most common topics since 2023?"
                         disabled={isLoading}
                         onSend={question => makeApiRequest(question)}
                     />
@@ -227,7 +240,7 @@ const AppReview = () => {
                     <>
                         <div className="oneshotAnswerContainer">
                             <AnswerIcon/><br/>
-                            {answer}
+                            {interleave(answer.split('\n'), <br/>)}
                         </div>
                         <div style={{maxHeight:'40vh',overflow:'auto',width: '100%'}}>
                         {renderTable(answerTable)}
