@@ -8,9 +8,12 @@ export type ExampleModel = {
 };
 
 const EXAMPLES: ExampleModel[] = [
-    { text: "What are the most common topics since 2023?", value: "What are the top 10 topics since 2023-01-01?" },
-    { text: "What is the average rating of reviews since 2023?", value: "What is the average rating of reviews since 2023-01-01?" },
-    { text: "What do customer say regarding login issues?", value: "What do customer say regarding login issues?" }
+    { text: "What are the top 10 topics since 2023-01-01?", value: "What are the top 10 topics since 2023-01-01?" },
+    { text: "What are the top 10 topics in version 5.43.1?", value: "What are the top 10 topics in version 5.43.1?" },
+    {
+        text: "Show me the reviews that has 'login error' in the topics since 2023-01-01?",
+        value: "Show me the reviews that has 'login error' in the topics since 2023-01-01."
+    }
 ];
 
 interface Props {
