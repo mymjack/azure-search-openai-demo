@@ -9,7 +9,7 @@ export type ExampleModel = {
 
 const EXAMPLES: ExampleModel[] = [
     { text: "What are the top 10 topics since 2023-01-01?", value: "What are the top 10 topics since 2023-01-01?" },
-    { text: "What are the top 10 topics in version 5.43.1?", value: "What are the top 10 topics in version 5.43.1?" },
+    { text: "what's the new topics in version 5.43.1 but not in other versions?", value: "what's the new topics in version 5.43.1 but not in other versions?" },
     {
         text: "Show me the reviews that has 'login error' in the topics since 2023-01-01?",
         value: "Show me the reviews that has 'login error' in the topics since 2023-01-01."
