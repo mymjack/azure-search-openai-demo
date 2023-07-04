@@ -161,7 +161,6 @@ const AppReview = () => {
             date={r['Date']}
             rating={r['Rating']}
             version={r['Version']}
-            tags={r['tags'].split(',')}
             topics={r['topics']}
         />)
         return <Masonry
