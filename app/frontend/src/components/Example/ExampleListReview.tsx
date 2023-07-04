@@ -11,8 +11,8 @@ const EXAMPLES: ExampleModel[] = [
     { text: "What are the top 10 topics since 2023-01-01?", value: "What are the top 10 topics since 2023-01-01?" },
     { text: "What's the new topics in version 5.43.1?", value: "What's the new topics in version 5.43.1?" },
     {
-        text: "What's the only topics in May 2023?",
-        value: "What's the only topics in May 2023?"
+        text: "What are the topics that occurs at least 3 times since between 2023-01-01 and 2023-04-01?",
+        value: "What are the topics that occurs at least 3 times since between 2023-01-01 and 2023-04-01?"
     }
 ];
 
