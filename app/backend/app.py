@@ -138,10 +138,14 @@ def app_review_table(platform):
     if platform not in ["ios", "android"]:
         return jsonify({"error": "unknown platform"}), 400
 
-    response = requests.post(APP_REVIEW_FUNCTION_ENDPOINT,
-                             json={"platform": platform,  "method": "get_table"},
-                             headers={"Content-Type": "application/json", 'Accept': 'application/json'})
-    return jsonify(response.json()), response.status_code, {"Content-Type": "application/json"}
+    try:
+        response = requests.post(APP_REVIEW_FUNCTION_ENDPOINT,
+                                json={"platform": platform,  "method": "get_table"},
+                                headers={"Content-Type": "application/json", 'Accept': 'application/json'})
+        return jsonify(response.json()), response.status_code, {"Content-Type": "application/json"}
+    except Exception as e:
+        logging.exception("Exception in /app_review/table")
+        return jsonify({"error": str(e)}), 500, {"Content-Type": "application/json"}
 
 
 @app.route("/app_review/question/<platform>", methods=["POST"])
@@ -153,13 +157,17 @@ def app_review_question(platform):
     if not question:
         return jsonify({"error": "missing question"}), 400
 
-    response = requests.post(APP_REVIEW_FUNCTION_ENDPOINT,
-                             json={
-                                 "platform": platform,
-                                 "method": "ask_question",
-                                 "question": question},
-                             headers={"Content-Type": "application/json", 'Accept': 'application/json'})
-    return jsonify(response.json()), response.status_code, {"Content-Type": "application/json"}
+    try:
+        response = requests.post(APP_REVIEW_FUNCTION_ENDPOINT,
+                                json={
+                                    "platform": platform,
+                                    "method": "ask_question",
+                                    "question": question},
+                                headers={"Content-Type": "application/json", 'Accept': 'application/json'})
+        return jsonify(response.json()), response.status_code, {"Content-Type": "application/json"}
+    except Exception as e:
+        logging.exception("Exception in /app_review/question")
+        return jsonify({"error": str(e)}), 500, {"Content-Type": "application/json"}
 
 
 def ensure_openai_token():
