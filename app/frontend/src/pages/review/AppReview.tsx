@@ -1,26 +1,38 @@
 import React from "react";
 import { useRef, useState, useEffect, useMemo } from "react";
-import { Checkbox, ChoiceGroup, IChoiceGroupOption, Panel, PrimaryButton, DefaultButton, Spinner, TextField, SpinButton, Slider, Toggle } from "@fluentui/react";
-import BootstrapTable from '@happymary16/react-bootstrap-table-next'; 
-import { useId } from '@fluentui/react-hooks';
+import {
+    Checkbox,
+    ChoiceGroup,
+    IChoiceGroupOption,
+    Panel,
+    PrimaryButton,
+    DefaultButton,
+    Spinner,
+    TextField,
+    SpinButton,
+    Slider,
+    Toggle
+} from "@fluentui/react";
+import BootstrapTable from "@happymary16/react-bootstrap-table-next";
+import { useId } from "@fluentui/react-hooks";
 
 import "./AppReview.css";
-import { Stack, IStackTokens } from '@fluentui/react';
+import { Stack, IStackTokens } from "@fluentui/react";
 
 import { Answer, AnswerError } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example/ExampleListReview";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { Review } from "./Review";
-import Masonry from 'react-masonry-css'
+import Masonry from "react-masonry-css";
 
 import { AnswerIcon } from "../../components/Answer/AnswerIcon";
 
 // Interface
 export enum Platform {
-    Android = 'android',
-    IOS = 'ios'
-} 
+    Android = "android",
+    IOS = "ios"
+}
 
 export type ReviewTableRequest = {
     platform: Platform;
@@ -33,13 +45,13 @@ export type ReviewRequest = {
 export type ReviewTableResponse = {
     table: object;
     error?: string;
-}
+};
 
 export type ReviewResponse = {
     answer: string;
     table: object;
     error?: string;
-}
+};
 
 // API calls
 export async function reviewTableApi(options: ReviewTableRequest): Promise<ReviewTableResponse> {
@@ -52,12 +64,11 @@ export async function reviewTableApi(options: ReviewTableRequest): Promise<Revie
 
     const parsedResponse: ReviewTableResponse = await response.json();
     if (response.status > 299 || !response.ok) {
-        throw Error(parsedResponse.error || "Unknown error");
+        throw Error("Sorry, we could not load the app review data, please try again.");
     }
 
     return parsedResponse;
 }
-
 
 export async function reviewApi(options: ReviewRequest): Promise<ReviewResponse> {
     const response = await fetch(`app_review/question/${options.platform}`, {
@@ -72,22 +83,21 @@ export async function reviewApi(options: ReviewRequest): Promise<ReviewResponse>
 
     const parsedResponse: ReviewResponse = await response.json();
     if (response.status > 299 || !response.ok) {
-        throw Error(parsedResponse.error || "Unknown error");
+        throw Error("Sorry, we could not answer your question, please try again.");
     }
 
     return parsedResponse;
 }
 
-const interleave = (arr:string[], insert:any) => ([] as string[]).concat(...arr.map(n => [n, insert])).slice(0, -1);
-
+const interleave = (arr: string[], insert: any) => ([] as string[]).concat(...arr.map(n => [n, insert])).slice(0, -1);
 
 const AppReview = () => {
     const [platform, setPlatform] = useState(Platform.Android);
-    const [fetchTableApi, setFetchTableApi] = useState('');
+    const [fetchTableApi, setFetchTableApi] = useState("");
 
     const tables = useRef({
-        [Platform.Android]:null as any, 
-        [Platform.IOS]:null as any
+        [Platform.Android]: null as any,
+        [Platform.IOS]: null as any
     });
 
     const lastQuestionRef = useRef<string>("");
@@ -102,11 +112,15 @@ const AppReview = () => {
         default: 3,
         1100: 2,
         700: 1
-      };
+    };
 
     const setTable = (tableData: any) => {
-        _setTable(tableData.map((t:any, i:number) => {return {...t, id:i}}))
-    }
+        _setTable(
+            tableData.map((t: any, i: number) => {
+                return { ...t, id: i };
+            })
+        );
+    };
 
     // API wrappers
     const loadTableApiRequest = async () => {
@@ -114,8 +128,8 @@ const AppReview = () => {
         // setIsLoading(true);
 
         if (tables.current[platform] != null) {
-            setTable(tables.current[platform])
-            return
+            setTable(tables.current[platform]);
+            return;
         }
 
         try {
@@ -153,48 +167,40 @@ const AppReview = () => {
         }
     };
 
-    const renderReviews = (data:any) => {
-        if (!data.length) return <></>
-        let review = data.map((r:any, i:number) => <Review 
-            key={'review-' + r['id']}
-            comment={r['Body']}
-            date={r['Date']}
-            rating={r['Rating']}
-            version={r['Version']}
-            topics={r['topics']}
-        />)
-        return <Masonry
-            breakpointCols={masonryBreakPoints}
-            className="masonryReviewGrid"
-            columnClassName="masonryReviewColumn">
-            {review}
-        </Masonry>
-    }
+    const renderReviews = (data: any) => {
+        if (!data.length) return <></>;
+        let review = data.map((r: any, i: number) => (
+            <Review key={"review-" + r["id"]} comment={r["Body"]} date={r["Date"]} rating={r["Rating"]} version={r["Version"]} topics={r["topics"]} />
+        ));
+        return (
+            <Masonry breakpointCols={masonryBreakPoints} className="masonryReviewGrid" columnClassName="masonryReviewColumn">
+                {review}
+            </Masonry>
+        );
+    };
 
-    const renderTable = (data:any) => {
+    const renderTable = (data: any) => {
         if (!data.length) return <></>;
 
-        const columns : object[] = 
-        Object.keys(data[0]).filter(k=>k!='id').map(k => { return {
-            dataField: k,
-            text: k
-        }});
+        const columns: object[] = Object.keys(data[0])
+            .filter(k => k != "id")
+            .map(k => {
+                return {
+                    dataField: k,
+                    text: k
+                };
+            });
 
-        return <BootstrapTable 
-        keyField='id' 
-        data={ data } 
-        columns={ columns } 
-        headerClasses="tableHeader"
-        rowClasses="tableRow"
-        className="table"
-        />
-    }
+        return <BootstrapTable keyField="id" data={data} columns={columns} headerClasses="tableHeader" rowClasses="tableRow" className="table" />;
+    };
 
-    const switchDisplay = (e:any, checked:boolean|undefined) => {
+    const switchDisplay = (e: any, checked: boolean | undefined) => {
         setShowAsTable(!!checked);
-    }
+    };
 
-    useEffect(() => {loadTableApiRequest()}, [platform]);
+    useEffect(() => {
+        loadTableApiRequest();
+    }, [platform]);
 
     const onExampleClicked = (example: string) => {
         makeApiRequest(example);
@@ -202,25 +208,22 @@ const AppReview = () => {
 
     return (
         <div className="oneshotContainer">
-            <div style={{height:'50vh',overflow:'auto',width: '100%'}}>
-            {showAsTable ? renderTable(table) : renderReviews(table)}
-
-            </div>
+            <div style={{ height: "50vh", overflow: "auto", width: "100%" }}>{showAsTable ? renderTable(table) : renderReviews(table)}</div>
             <div className="controls">
                 <span>
-                {platform == Platform.Android ?
-                <PrimaryButton text="Android" 
-                    onClick={() => setPlatform(Platform.Android)} />
-                :<DefaultButton text="Android" 
-                    onClick={() => setPlatform(Platform.Android)} />}
-                {platform == Platform.IOS ?
-                <PrimaryButton text="iOS" 
-                    onClick={() => setPlatform(Platform.IOS)} />
-                :<DefaultButton text="iOS" 
-                    onClick={() => setPlatform(Platform.IOS)} />}
+                    {platform == Platform.Android ? (
+                        <PrimaryButton text="Android" onClick={() => setPlatform(Platform.Android)} />
+                    ) : (
+                        <DefaultButton text="Android" onClick={() => setPlatform(Platform.Android)} />
+                    )}
+                    {platform == Platform.IOS ? (
+                        <PrimaryButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
+                    ) : (
+                        <DefaultButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
+                    )}
                 </span>
                 <span>
-                    <Toggle className="toggle" onText="Showing above as Table" offText="Showing above as Reviews" onChange={switchDisplay} /> 
+                    <Toggle className="toggle" onText="Showing above as Table" offText="Showing above as Reviews" onChange={switchDisplay} />
                 </span>
             </div>
             <div className="oneshotTopSection">
@@ -238,12 +241,11 @@ const AppReview = () => {
                 {!isLoading && answer && !error && (
                     <>
                         <div className="oneshotAnswerContainer">
-                            <AnswerIcon/><br/>
-                            {interleave(answer.split('\n'), <br/>)}
+                            <AnswerIcon />
+                            <br />
+                            {interleave(answer.split("\n"), <br />)}
                         </div>
-                        <div style={{maxHeight:'40vh',overflow:'auto',width: '100%'}}>
-                        {renderTable(answerTable)}
-                        </div>
+                        <div style={{ maxHeight: "40vh", overflow: "auto", width: "100%" }}>{renderTable(answerTable)}</div>
                     </>
                 )}
                 {error ? (
@@ -251,7 +253,6 @@ const AppReview = () => {
                         <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
                     </div>
                 ) : null}
-                
             </div>
         </div>
     );
