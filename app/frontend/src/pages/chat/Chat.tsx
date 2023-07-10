@@ -104,14 +104,8 @@ const Chat = () => {
     };
 
     const onShowCitation = (citation: string, index: number) => {
-        if (activeCitation === citation && activeAnalysisPanelTab === AnalysisPanelTabs.CitationTab && selectedAnswer === index) {
-            setActiveAnalysisPanelTab(undefined);
-        } else {
-            setActiveCitation(citation);
-            setActiveAnalysisPanelTab(AnalysisPanelTabs.CitationTab);
-        }
-
-        setSelectedAnswer(index);
+        const url = citation.startsWith("/content/") ? citation.slice("/content/".length) : citation;
+        window.open(url, "_blank");
     };
 
     const onToggleTab = (tab: AnalysisPanelTabs, index: number) => {

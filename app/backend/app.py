@@ -97,13 +97,13 @@ def static_file(path):
 # Serve content files from blob storage from within the app to keep the example self-contained. 
 # *** NOTE *** this assumes that the content files are public, or at least that all users of the app
 # can access all the files. This is also slow and memory hungry.
-@app.route("/content/<path>")
-def content_file(path):
-    blob = blob_container.get_blob_client(path).download_blob()
-    mime_type = blob.properties["content_settings"]["content_type"]
-    if mime_type == "application/octet-stream":
-        mime_type = mimetypes.guess_type(path)[0] or "application/octet-stream"
-    return blob.readall(), 200, {"Content-Type": mime_type, "Content-Disposition": f"inline; filename={path}"}
+# @app.route("/content/<path>")
+# def content_file(path):
+#     blob = blob_container.get_blob_client(path).download_blob()
+#     mime_type = blob.properties["content_settings"]["content_type"]
+#     if mime_type == "application/octet-stream":
+#         mime_type = mimetypes.guess_type(path)[0] or "application/octet-stream"
+#     return blob.readall(), 200, {"Content-Type": mime_type, "Content-Disposition": f"inline; filename={path}"}
     
 @app.route("/ask", methods=["POST"])
 def ask():

@@ -45,13 +45,6 @@ export const AnalysisPanel = ({ answer, activeTab, activeCitation, citationHeigh
             >
                 <SupportingContent supportingContent={answer.data_points} />
             </PivotItem>
-            <PivotItem
-                itemKey={AnalysisPanelTabs.CitationTab}
-                headerText="Citation"
-                headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
-            >
-                <iframe title="Citation" src={activeCitation} width="100%" height={citationHeight} />
-            </PivotItem>
         </Pivot>
     );
 };
