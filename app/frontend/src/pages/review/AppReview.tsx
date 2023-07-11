@@ -110,8 +110,8 @@ const AppReview = () => {
     const [answer, setAnswer] = useState<string>();
     const masonryBreakPoints = {
         default: 3,
-        1100: 2,
-        700: 1
+        2700: 2,
+        1100: 1
     };
 
     const setTable = (tableData: any) => {
@@ -208,51 +208,55 @@ const AppReview = () => {
 
     return (
         <div className="oneshotContainer">
-            <div style={{ height: "50vh", overflow: "auto", width: "100%" }}>{showAsTable ? renderTable(table) : renderReviews(table)}</div>
-            <div className="controls">
-                <span>
-                    {platform == Platform.Android ? (
-                        <PrimaryButton text="Android" onClick={() => setPlatform(Platform.Android)} />
-                    ) : (
-                        <DefaultButton text="Android" onClick={() => setPlatform(Platform.Android)} />
-                    )}
-                    {platform == Platform.IOS ? (
-                        <PrimaryButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
-                    ) : (
-                        <DefaultButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
-                    )}
-                </span>
-                <span>
-                    <Toggle className="toggle" onText="Showing above as Table" offText="Showing above as Reviews" onChange={switchDisplay} />
-                </span>
-            </div>
-            <div className="oneshotTopSection">
-                <div className="oneshotQuestionInput">
-                    <QuestionInput
-                        placeholder="Example: What are the most common topics since 2023?"
-                        disabled={isLoading}
-                        onSend={question => makeApiRequest(question)}
-                    />
+            <div className="left-pane">
+                <div className="controls">
+                    <span>
+                        {platform == Platform.Android ? (
+                            <PrimaryButton text="Android" onClick={() => setPlatform(Platform.Android)} />
+                        ) : (
+                            <DefaultButton text="Android" onClick={() => setPlatform(Platform.Android)} />
+                        )}
+                        {platform == Platform.IOS ? (
+                            <PrimaryButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
+                        ) : (
+                            <DefaultButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
+                        )}
+                    </span>
+                    <span>
+                        <Toggle className="toggle" onText="Showing as Table" offText="Showing as Reviews" onChange={switchDisplay} />
+                    </span>
                 </div>
+                {showAsTable ? renderTable(table) : renderReviews(table)}
             </div>
-            <div className="oneshotBottomSection">
-                {isLoading && <Spinner label="Generating answer" />}
-                {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} />}
-                {!isLoading && answer && !error && (
-                    <>
-                        <div className="oneshotAnswerContainer">
-                            <AnswerIcon />
-                            <br />
-                            {interleave(answer.split("\n"), <br />)}
-                        </div>
-                        <div style={{ maxHeight: "40vh", overflow: "auto", width: "100%" }}>{renderTable(answerTable)}</div>
-                    </>
-                )}
-                {error ? (
-                    <div className="oneshotAnswerContainer">
-                        <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
+            <div className="right-pane">
+                <div className="oneshotTopSection">
+                    <div className="oneshotQuestionInput">
+                        <QuestionInput
+                            placeholder="Example: What are the most common topics since 2023?"
+                            disabled={isLoading}
+                            onSend={question => makeApiRequest(question)}
+                        />
                     </div>
-                ) : null}
+                </div>
+                <div className="oneshotBottomSection">
+                    {isLoading && <Spinner label="Generating answer" />}
+                    {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} />}
+                    {!isLoading && answer && !error && (
+                        <>
+                            <div className="oneshotAnswerContainer">
+                                <AnswerIcon />
+                                <br />
+                                {interleave(answer.split("\n"), <br />)}
+                            </div>
+                            <div style={{ overflow: "auto", width: "100%" }}>{renderTable(answerTable)}</div>
+                        </>
+                    )}
+                    {error ? (
+                        <div className="oneshotAnswerContainer">
+                            <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
+                        </div>
+                    ) : null}
+                </div>
             </div>
         </div>
     );

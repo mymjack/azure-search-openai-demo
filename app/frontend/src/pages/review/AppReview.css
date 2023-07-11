@@ -1,5 +1,20 @@
+.left-pane {
+    width: 50%;
+    overflow: auto;
+    height: calc(100vh - 63px);
+    float: left;
+    border-right: 1px solid #d8d8d8;
+}
+
+.right-pane {
+    width: 50%;
+    overflow: auto;
+    height: calc(100vh - 63px);
+    float: right;
+}
+
 .oneshotContainer {
-    display: flex;
+    /* display: flex; */
     flex: 1;
     flex-direction: column;
     align-items: center;
@@ -10,6 +25,7 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
+    margin-top: 20px;
 }
 
 .oneshotBottomSection {
@@ -93,7 +109,7 @@ thead {
 }
 
 .controls {
-    box-shadow: 0 -2px 4px 0 rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,0.1);
     display: flex;
     align-items: center;
     justify-content: center;
