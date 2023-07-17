@@ -17,7 +17,7 @@ import BootstrapTable from "@happymary16/react-bootstrap-table-next";
 import { useId } from "@fluentui/react-hooks";
 
 import "./AppReview.css";
-import { Stack, IStackTokens } from "@fluentui/react";
+import { Stack, IStackTokens, IconButton } from "@fluentui/react";
 
 import { Answer, AnswerError } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
@@ -50,6 +50,7 @@ export type ReviewTableResponse = {
 export type ReviewResponse = {
     answer: string;
     table: object;
+    log: string;
     error?: string;
 };
 
@@ -108,6 +109,8 @@ const AppReview = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<unknown>();
     const [answer, setAnswer] = useState<string>();
+    const [log, setLog] = useState<string>();
+    const [actualDisplay, setActualDisplay] = useState<string>();
     const masonryBreakPoints = {
         default: 3,
         2700: 2,
@@ -159,11 +162,23 @@ const AppReview = () => {
             };
             const result = await reviewApi(request);
             setAnswer(result.answer);
+            setLog(result.log);
+            setActualDisplay(result.answer);
             setAnswerTable(result.table);
         } catch (e) {
             setError(e);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const onThoughtProcessClicked = (answer: string, log: string) => {
+        // if actualDisplay is null or equal to log, then we are showing the answer
+        // if actualDisplay is equal to the answer, then we are showing the log
+        if (actualDisplay == null || actualDisplay === log) {
+            setActualDisplay(answer);
+        } else {
+            setActualDisplay(log);
         }
     };
 
@@ -241,12 +256,18 @@ const AppReview = () => {
                 <div className="oneshotBottomSection">
                     {isLoading && <Spinner label="Generating answer" />}
                     {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} />}
-                    {!isLoading && answer && !error && (
+                    {!isLoading && answer && log && actualDisplay && !error && (
                         <>
                             <div className="oneshotAnswerContainer">
-                                <AnswerIcon />
+                                <IconButton
+                                    style={{ color: "black" }}
+                                    iconProps={{ iconName: "Lightbulb" }}
+                                    title="Show thought process"
+                                    ariaLabel="Show thought process"
+                                    onClick={() => onThoughtProcessClicked(answer, log)}
+                                />
                                 <br />
-                                {interleave(answer.split("\n"), <br />)}
+                                {interleave(actualDisplay.split("\n"), <br />)}
                             </div>
                             <div style={{ overflow: "auto", width: "100%" }}>{renderTable(answerTable)}</div>
                         </>
