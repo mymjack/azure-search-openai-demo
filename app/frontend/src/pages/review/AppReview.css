@@ -70,6 +70,10 @@
     margin-bottom: 10px;
 }
 
+.oneshotTableContainer {
+    margin-bottom: 20px;
+}
+
 .oneshotAnalysisPanel {
     width: 600px;
     margin-left: 20px;
@@ -94,8 +98,7 @@ thead {
     top: 0px;
     margin: 0;
     background: white;
-    box-shadow: 0 0 4px 0 rgba(0,0,0,0.1);
-
+    box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.1);
 }
 
 .masonryReviewGrid {
@@ -105,11 +108,11 @@ thead {
     width: auto;
 }
 .masonryReviewColumn {
-  background-clip: padding-box;
+    background-clip: padding-box;
 }
 
 .controls {
-    box-shadow: 0 2px 4px 0 rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;

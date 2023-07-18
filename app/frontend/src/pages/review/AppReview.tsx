@@ -105,12 +105,10 @@ const AppReview = () => {
     const [showAsTable, setShowAsTable] = useState(false);
 
     const [table, _setTable] = useState<object>([]);
-    const [answerTable, setAnswerTable] = useState<object>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<unknown>();
-    const [answer, setAnswer] = useState<string>();
-    const [log, setLog] = useState<string>();
-    const [actualDisplay, setActualDisplay] = useState<string>();
+    const [histories, SetHistories] = useState<[request: ReviewRequest, response: ReviewResponse, display: string][]>([]);
+
     const masonryBreakPoints = {
         default: 3,
         2700: 2,
@@ -161,10 +159,7 @@ const AppReview = () => {
                 platform: platform
             };
             const result = await reviewApi(request);
-            setAnswer(result.answer);
-            setLog(result.log);
-            setActualDisplay(result.answer);
-            setAnswerTable(result.table);
+            SetHistories([...histories, [request, result, result.answer]]);
         } catch (e) {
             setError(e);
         } finally {
@@ -172,13 +167,12 @@ const AppReview = () => {
         }
     };
 
-    const onThoughtProcessClicked = (answer: string, log: string) => {
-        // if actualDisplay is null or equal to log, then we are showing the answer
-        // if actualDisplay is equal to the answer, then we are showing the log
-        if (actualDisplay == null || actualDisplay === log) {
-            setActualDisplay(answer);
+    const onThoughtProcessClicked = (index: number) => {
+        const [request, response, display] = histories[index];
+        if (display === response.log) {
+            SetHistories([...histories.slice(0, index), [request, response, response.answer], ...histories.slice(index + 1)]);
         } else {
-            setActualDisplay(log);
+            SetHistories([...histories.slice(0, index), [request, response, response.log], ...histories.slice(index + 1)]);
         }
     };
 
@@ -223,26 +217,24 @@ const AppReview = () => {
 
     return (
         <div className="oneshotContainer">
-            <div className="left-pane">
-                <div className="controls">
-                    <span>
-                        {platform == Platform.Android ? (
-                            <PrimaryButton text="Android" onClick={() => setPlatform(Platform.Android)} />
-                        ) : (
-                            <DefaultButton text="Android" onClick={() => setPlatform(Platform.Android)} />
-                        )}
-                        {platform == Platform.IOS ? (
-                            <PrimaryButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
-                        ) : (
-                            <DefaultButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
-                        )}
-                    </span>
-                    <span>
-                        <Toggle className="toggle" onText="Showing as Table" offText="Showing as Reviews" onChange={switchDisplay} />
-                    </span>
-                </div>
-                {showAsTable ? renderTable(table) : renderReviews(table)}
+            <div className="controls">
+                <span>
+                    {platform == Platform.Android ? (
+                        <PrimaryButton text="Android" onClick={() => setPlatform(Platform.Android)} />
+                    ) : (
+                        <DefaultButton text="Android" onClick={() => setPlatform(Platform.Android)} />
+                    )}
+                    {platform == Platform.IOS ? (
+                        <PrimaryButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
+                    ) : (
+                        <DefaultButton text="iOS" onClick={() => setPlatform(Platform.IOS)} />
+                    )}
+                </span>
+                <span>
+                    <Toggle className="toggle" onText="Showing as Table" offText="Showing as Reviews" onChange={switchDisplay} />
+                </span>
             </div>
+            <div className="left-pane">{showAsTable ? renderTable(table) : renderReviews(table)}</div>
             <div className="right-pane">
                 <div className="oneshotTopSection">
                     <div className="oneshotQuestionInput">
@@ -256,22 +248,33 @@ const AppReview = () => {
                 <div className="oneshotBottomSection">
                     {isLoading && <Spinner label="Generating answer" />}
                     {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} />}
-                    {!isLoading && answer && log && actualDisplay && !error && (
-                        <>
-                            <div className="oneshotAnswerContainer">
-                                <IconButton
-                                    style={{ color: "black" }}
-                                    iconProps={{ iconName: "Lightbulb" }}
-                                    title="Show thought process"
-                                    ariaLabel="Show thought process"
-                                    onClick={() => onThoughtProcessClicked(answer, log)}
-                                />
-                                <br />
-                                {interleave(actualDisplay.split("\n"), <br />)}
-                            </div>
-                            <div style={{ overflow: "auto", width: "100%" }}>{renderTable(answerTable)}</div>
-                        </>
-                    )}
+                    {!error &&
+                        histories
+                            .map(
+                                (history, index) =>
+                                    history[0].platform == platform && (
+                                        <>
+                                            <div className="oneshotAnswerContainer">
+                                                <IconButton
+                                                    style={{ color: "blue" }}
+                                                    iconProps={{ iconName: "Lightbulb" }}
+                                                    title="Show thought process"
+                                                    ariaLabel="Show thought process"
+                                                    onClick={() => onThoughtProcessClicked(index)}
+                                                />
+                                                <br />
+                                                <span style={{ color: "blue" }}>Question: {history[0].question}</span>
+                                                <br />
+                                                <br />
+                                                {interleave(history[2].split("\n"), <br />)}
+                                            </div>
+                                            <div className="oneshotTableContainer" style={{ overflow: "auto", width: "100%" }}>
+                                                {renderTable(history[1].table)}
+                                            </div>
+                                        </>
+                                    )
+                            )
+                            .reverse()}
                     {error ? (
                         <div className="oneshotAnswerContainer">
                             <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
