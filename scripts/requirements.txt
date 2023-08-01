@@ -6,3 +6,5 @@ azure-storage-blob==12.14.1
 tenacity==8.2.2
 openai==0.27.8
 numpy==1.21.6
+selenium==4.10.0
+beautifulsoup4==4.12.2

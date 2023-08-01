@@ -148,3 +148,5 @@ static/
 
 .idea/
 data/
+
+/scripts/scraping/pdf2htmlEX

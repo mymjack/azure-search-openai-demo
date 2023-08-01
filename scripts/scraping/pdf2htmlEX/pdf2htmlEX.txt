@@ -1,0 +1,2 @@
+Please download the appropriate version for your system and place the extracted files under this folder (so pdf2htmlEX.exe should be in this folder if on Windows)
+I downloaded mine for Windows at https://soft.rubypdf.com/software/pdf2htmlex-windows-version (win32-0.14.6 with poppler data)
