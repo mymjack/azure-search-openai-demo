@@ -14,4 +14,4 @@ if __name__ == '__main__':
     #     'https://www.bmo.com/main/personal/bank-accounts/': None
     # }
     # scrape_sitemap(sitemap, save_to)
-    extract_all_html(save_to, skip_header_footer=True)
+    extract_all_html(save_to, skip_header_footer=True, condense_content=True)

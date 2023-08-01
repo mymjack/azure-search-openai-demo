@@ -3,15 +3,14 @@ import glob
 from bs4 import BeautifulSoup, Comment
 import os
 import json
+import re
 
 
-def extract_html(soup, depth=0, purge_tags=[]):
+def extract_html(soup, depth=0, purge_tags=[], condense_content=False):
     if not soup:
         return ' '
     result = ""
     is_mixed_content = len(soup.contents) > 1
-    if depth == 13:
-        print('her')
     for element in soup.contents:
         if isinstance(element, Comment):
             continue
@@ -21,7 +20,7 @@ def extract_html(soup, depth=0, purge_tags=[]):
             result += '\n'
 
         elif element.name in ['a', 'strong', 'b', 'em', 'i', 'u', 'span']:
-            result += ' ' + extract_html(element, depth+1, purge_tags)
+            result += ' ' + extract_html(element, depth + 1, purge_tags, condense_content)
         elif element.name in ['img']:
             if element.has_attr('alt'):
                 result += ' ' + element['alt']
@@ -30,7 +29,8 @@ def extract_html(soup, depth=0, purge_tags=[]):
             result += ' ' + element
             # is_mixed_content = True
         else:
-            result += ' ' + extract_html(element, depth+1, purge_tags)
+            token = '  ' if condense_content else '\n'
+            result += token + extract_html(element, depth + 1, purge_tags, condense_content)
 
     result = result.strip()
     is_mixed_content &= result != ''
@@ -47,7 +47,7 @@ def purge_from_soup(soup, tags):
             component.decompose()
 
 
-def extract_all_html(save_to="../../data/BMOcomCloned", skip_header_footer=True):
+def extract_all_html(save_to="../../data/BMOcomCloned", skip_header_footer=True, condense_content=False):
     html_files = glob.glob(os.path.join(save_to, "**/*.html"), recursive=True)
 
     # loop through the list of HTML files
@@ -57,12 +57,15 @@ def extract_all_html(save_to="../../data/BMOcomCloned", skip_header_footer=True)
             print(f'Processing ({i}/{total}) {file}')
             soup = BeautifulSoup(html_file, 'html.parser')
             purge_tags = ['header', 'footer', 'nav'] if skip_header_footer else []
-            text = extract_html(soup.body, purge_tags=purge_tags)
+            text = extract_html(soup.body, purge_tags=purge_tags, condense_content=condense_content)
 
         with open(file.replace('.html', '.txt'), 'w+', encoding='utf-8') as f:
             if 'pdf' in file:
-                # PDF only whitespace fix
+                # PDF only
+                # whitespace fix
                 text = text.replace('  ', '')
+                # PDF hierarchy is not very useful beyond depth 3.
+                text = re.sub(r'</?[^/0123]\d*>', '', text)
             f.write(text)
 
 
