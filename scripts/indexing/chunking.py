@@ -1,4 +1,7 @@
+import os
 import re
+import glob
+import json
 
 WHITE_SPACES = ["", " ", "\n"]
 SENTENCE_ENDINGS = [",", ".", "!", "?"]
@@ -123,7 +126,7 @@ def chunk_by_sentence(text, desired_chunk_length=1000, sentence_search_limit=100
 
 
 # Main function
-def chunk_text(text, desired_chunk_length=1000, sentence_search_limit=100, section_overlap=100, combine_short_sections=True, separator_token='</?{depth}>', max_depth=99):
+def chunk_text(text, desired_chunk_length=1500, sentence_search_limit=100, section_overlap=200, combine_short_sections=True, separator_token='</?{depth}>', max_depth=99):
     """
     Tries to section text first by hierarchical structure. If each section is still too long, split the sections into
     smaller chunks with overlap. Tries its best to break at paragraphs, or sentences, or at worst at words.
@@ -144,12 +147,24 @@ def chunk_text(text, desired_chunk_length=1000, sentence_search_limit=100, secti
                 yield chunk.strip().replace('B M O', 'BMO')
 
 
-if __name__ == '__main__':
-    # text = "Winged male which behold all our let was rule likeness he whales saying make over blessed whales won't said sixth i doesn't Green creeping. Great fourth sea creature. To waters void and tree thing multiply which had seasons made. Moved multiply behold. Image and fowl thing bearing can't were his seed shall day day meat of void cattle shall a said created open void day itself he abundantly i. Over. Cattle forth moving earth gathering moving the very forth third. Moving dominion midst which stars years fish they're you upon signs, whose, be greater third, created itself cattle created spirit."
-    # print(list(chunk_text(text, 100, 50, 10)))
+def chunk_all_text(save_to='../../data/BMOcomCloned', *args, **kwargs):
+    txt_files = glob.glob(os.path.join(save_to, "**/*.txt"), recursive=True)
 
-    with open(r'D:\Workspace\BMO\azure-search-openai-demo\data\BMOcomCloned\main\personal\bank-accounts.txt', encoding='utf8') as f:
-        text = f.read()
-    # with open(r'D:\Workspace\BMO\azure-search-openai-demo\data\BMOcomCloned\pdfs\pdf\price-change-2023-en.txt', encoding='utf8') as f:
+    # loop through the list of HTML files
+    total = len(txt_files)
+    for i, file in enumerate(txt_files):
+        print(f'Processing ({i}/{total}) {file}')
+        with open(file, encoding='utf8') as f:
+            contents = f.read()
+        chunks = chunk_text(contents, *args, **kwargs)
+        with open(file.replace('.txt', '.chunks.json'), 'w+', encoding='utf8') as f:
+            json.dump(list(chunks), f, indent=2)
+
+
+if __name__ == '__main__':
+    # with open(r'D:\Workspace\BMO\azure-search-openai-demo\data\BMOcomCloned\main\personal\bank-accounts.txt', encoding='utf8') as f:
     #     text = f.read()
-    [print(x + '\n\n#####################\n\n') for x in list(chunk_text(text, 1500, 100, 300))]
+    # # with open(r'D:\Workspace\BMO\azure-search-openai-demo\data\BMOcomCloned\pdfs\pdf\price-change-2023-en.txt', encoding='utf8') as f:
+    # #     text = f.read()
+    # [print(x + '\n\n#####################\n\n') for x in list(chunk_text(text, 1500, 100, 300))]
+    chunk_all_text('../../data/BMOcomCloned', desired_chunk_length=1500, sentence_search_limit=100, section_overlap=200)

@@ -21,16 +21,23 @@ def download_resource(url, path, save_to):
     """Downloads a resource (CSS, JS, image, etc.) and saves it to a file."""
     if url.endswith('.com') or url.endswith('.ca'):
         return
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    content = requests.get(
-        url,
-        headers={'Origin': 'https://' + urlparse(url).hostname}
-    ).content
+    if os.path.isfile(path):
+        return
+    else:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+    if not urlparse(url).hostname:
+        return
     try:
+        content = requests.get(
+            url,
+            headers={'Origin': 'https://' + urlparse(url).hostname},
+            timeout=5
+        ).content
         if '.js' in url:
             content = content.decode('utf8')
             content = content.replace('https://' + urlparse(url).hostname, os.path.abspath(save_to).replace('\\', '/').split(':', 1)[1])
-            content = re.sub(r'"/?(.*).svg"', os.path.abspath(save_to).replace('\\', '/').split(':', 1)[1] + '/resources/\\1.svg', content)
+            if len(content) < 3000:
+                content = re.sub(r'"/?(.*).svg"', os.path.abspath(save_to).replace('\\', '/').split(':', 1)[1] + '/resources/\\1.svg', content)
             content = content.encode('utf8')
         with open(path, 'wb') as f:
             f.write(content)
@@ -55,13 +62,16 @@ def pdf_to_html(pdf_url, save_to):
     """function to download a PDF file and convert it to HTML using pdf2htmlEX"""
     # https://github.com/coolwanglu/pdf2htmlEX/wiki/Download
     # download the PDF file
-    response = requests.get(pdf_url)
     filename = os.path.join(save_to, 'pdfs', urlparse(pdf_url).path.lstrip('/'))
+    if os.path.isfile(filename.replace('.pdf', '.meta.json')):
+        print('PDF already processed')
+        return
+    response = requests.get(pdf_url, timeout=10)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "wb") as f:
         f.write(response.content)
     with open(filename.replace('.pdf', '.meta.json'), "w+") as f:
-        f.write(json.dumps({'url': pdf_url}))
+        json.dump({'url': pdf_url, 'title': os.path.basename(filename)}, f)
 
     # convert the PDF file to HTML using pdf2htmlEX
     exe = 'pdf2htmlEX/pdf2htmlEX.exe'
@@ -72,11 +82,20 @@ def pdf_to_html(pdf_url, save_to):
 
 
 def scrape_url(args):
+    (i, total, url, save_to) = args
+
+    page_path = os.path.join(save_to, urlparse(url).path.lstrip('/'))
+    if page_path[-1] == '/':
+        page_path = page_path[:-1]
+    page_path += '.html'
+    if os.path.isfile(page_path):
+        print(f'Already processed ({i}/{total}) {url}')
+        return
+
     # Create a new browser instance
     driver = webdriver.Edge()
 
     try:
-        (i, total, url, save_to) = args
 
         print(f'Processing ({i}/{total}) {url}')
 
@@ -90,10 +109,6 @@ def scrape_url(args):
         page_source = driver.page_source
 
         # Download the page
-        page_path = os.path.join(save_to, urlparse(url).path.lstrip('/'))
-        if page_path[-1] == '/':
-            page_path = page_path[:-1]
-        page_path += '.html'
         download_page(url, page_source, page_path)
 
         # Parse the HTML
@@ -102,7 +117,10 @@ def scrape_url(args):
 
         title = soup.find('title')
         with open(page_path.replace('.html', '.meta.json'), 'w+', encoding='utf8') as f:
-            f.write(json.dumps({'url': url, 'title': title.text}))
+            if title:
+                json.dump({'url': url, 'title': title.text}, f)
+            else:
+                json.dump({'url': url}, f)
 
         download_pdfs_in_html(soup, url, save_to)
 
@@ -128,6 +146,7 @@ def scrape_url(args):
         # Save the modified HTML
         with open(page_path, 'wb') as f:
             f.write(soup.encode())
+        print('Updated resource references in html')
     except:
         print_exc()
         return
