@@ -82,7 +82,7 @@ def pdf_to_html(pdf_url, save_to):
 
 
 def scrape_url(args):
-    (i, total, url, save_to) = args
+    (i, total, url, save_to, save_resources) = args
 
     page_path = os.path.join(save_to, urlparse(url).path.lstrip('/'))
     if page_path[-1] == '/':
@@ -124,29 +124,30 @@ def scrape_url(args):
 
         download_pdfs_in_html(soup, url, save_to)
 
-        # Download and replace resources in the HTML
-        resources = soup.find_all(['link', 'script', 'img'])
-        for res in resources:
-            if 'src' in res.attrs:
-                res_url = urljoin(url, res['src'])
-            elif 'href' in res.attrs:
-                res_url = urljoin(url, res['href'])
-            else:
-                continue
+        if save_resources:
+            # Download and replace resources in the HTML
+            resources = soup.find_all(['link', 'script', 'img'])
+            for res in resources:
+                if 'src' in res.attrs:
+                    res_url = urljoin(url, res['src'])
+                elif 'href' in res.attrs:
+                    res_url = urljoin(url, res['href'])
+                else:
+                    continue
 
-            res_path = os.path.join(save_to, 'resources', urlparse(res_url).path.lstrip('/'))
-            if not os.path.isfile(res_path):
-                download_resource(res_url, res_path, save_to)
+                res_path = os.path.join(save_to, 'resources', urlparse(res_url).path.lstrip('/'))
+                if not os.path.isfile(res_path):
+                    download_resource(res_url, res_path, save_to)
 
-            if 'src' in res.attrs:
-                res.attrs['src'] = os.path.abspath(res_path).replace('\\', '/').split(':', 1)[1]
-            elif 'href' in res.attrs:
-                res.attrs['href'] = os.path.abspath(res_path).replace('\\', '/').split(':', 1)[1]
+                if 'src' in res.attrs:
+                    res.attrs['src'] = os.path.abspath(res_path).replace('\\', '/').split(':', 1)[1]
+                elif 'href' in res.attrs:
+                    res.attrs['href'] = os.path.abspath(res_path).replace('\\', '/').split(':', 1)[1]
 
-        # Save the modified HTML
-        with open(page_path, 'wb') as f:
-            f.write(soup.encode())
-        print('Updated resource references in html')
+            # Save the modified HTML
+            with open(page_path, 'wb') as f:
+                f.write(soup.encode())
+            print('Updated resource references in html')
     except:
         print_exc()
         return
@@ -155,13 +156,13 @@ def scrape_url(args):
         driver.quit()
 
 
-def scrape_sitemap(sitemap, save_to='../../data/BMOcomCloned'):
+def scrape_sitemap(sitemap, save_to='../../data/BMOcomCloned', save_resources=False):
     """Clones all pages in the sitemap and saves them along with their resources as local copies."""
     urls = list(sitemap.keys())
 
     with ThreadPoolExecutor(max_workers=16) as executor:
         total = len(urls)
-        futures = [executor.submit(scrape_url, (i, total, url, save_to)) for i, url in enumerate(urls)]
+        futures = [executor.submit(scrape_url, (i, total, url, save_to, save_resources)) for i, url in enumerate(urls)]
 
         # Wait for all the futures to complete
         for future in futures:
@@ -171,7 +172,7 @@ def scrape_sitemap(sitemap, save_to='../../data/BMOcomCloned'):
         try:
             # Recursively clone sub-sitemap
             if sub_sitemap:
-                scrape_sitemap(sub_sitemap, save_to)
+                scrape_sitemap(sub_sitemap, save_to, save_resources)
         except:
             continue
 

@@ -13,5 +13,5 @@ if __name__ == '__main__':
     # sitemap = {
     #     'https://www.bmo.com/main/personal/bank-accounts/': None
     # }
-    scrape_sitemap(sitemap, save_to)
+    scrape_sitemap(sitemap, save_to, save_resources=False)
     extract_all_html(save_to, skip_header_footer=True, condense_content=True)
