@@ -56,7 +56,7 @@ export type ReviewResponse = {
 
 // API calls
 export async function reviewTableApi(options: ReviewTableRequest): Promise<ReviewTableResponse> {
-    const response = await fetch(`app_review/table/${options.platform}`, {
+    const response = await fetch(`http://localhost:5000/app_review/table/${options.platform}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
@@ -72,7 +72,7 @@ export async function reviewTableApi(options: ReviewTableRequest): Promise<Revie
 }
 
 export async function reviewApi(options: ReviewRequest): Promise<ReviewResponse> {
-    const response = await fetch(`app_review/question/${options.platform}`, {
+    const response = await fetch(`http://localhost:5000/app_review/question/${options.platform}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -118,7 +118,7 @@ const AppReview = () => {
     const setTable = (tableData: any) => {
         _setTable(
             tableData.map((t: any, i: number) => {
-                return { ...t, id: i };
+                return { ...t, id: platform + '-' + i };
             })
         );
     };
@@ -196,7 +196,8 @@ const AppReview = () => {
             .map(k => {
                 return {
                     dataField: k,
-                    text: k
+                    text: k,
+                    sort: true
                 };
             });
 
